@@ -1,0 +1,3 @@
+tflite-runtime==2.14.0 # has to be the same version as the tensorflow version
+                       # used during training.
+numpy==1.26.4 # tflite-runtime uses numpy1, so we have to as well.
