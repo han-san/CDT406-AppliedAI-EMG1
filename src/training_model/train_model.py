@@ -3,18 +3,18 @@ import numpy.typing as npt
 import tensorflow as tf
 
 # NOTE: We assume we are running this program from the same directory as this python file.
-modelPath = "../../model/model.tflite"
+model_path = "../../model/model.tflite"
 
 # The amount of measurement readings we use as input.
-timestepWindowSize = 200
+timestep_window_size = 200
 # The amount of measurements included in each reading.
-channelCount = 1
+channel_count = 1
 
-# TODO: Get path from user.
-dataFilePath = ""
+# TODO(johan): Get path from user.
+data_filepath = ""
 
 
-def createModel(timesteps: int, samples: int):
+def create_model(timesteps: int, samples: int):
     # Create the same type of model as in https://doi.org/10.3390/app12199700.
     # The 'unroll=True' has to be set in the LSTM layer to be able to run the model using the tflite-runtime.
     # Otherwise the model contains the OP "FlexTensorListReserve" which is only available in
@@ -32,49 +32,49 @@ def createModel(timesteps: int, samples: int):
     return model
 
 
-# TODO: Actually load a data file.
-def loadDataFile(filePath: str) -> npt.NDArray[np.float32]:
-    return np.array([1.0 for n in range(timestepWindowSize)])
+# TODO(johan): Actually load a data file.
+def load_data_file(filePath: str) -> npt.NDArray[np.float32]:
+    return np.array([1.0 for n in range(timestep_window_size)])
 
 
-def loadDataFiles(filePaths: list[str]):
+def load_data_files(filePaths: list[str]):
     result = []
     for path in filePaths:
-        result.append(loadDataFile(path))
+        result.append(load_data_file(path))
     return np.array(result)
 
 
-def createWindows(data: npt.NDArray[np.float32], windowSize: int):
-    # TODO: Decide what to do with the last window if it is < windowSize.
+def create_windows(data: npt.NDArray[np.float32], windowSize: int):
+    # TODO(johan): Decide what to do with the last window if it is < windowSize.
     #   - ignore?
     #   - use average of all measurements (think one of the groups from previous years did this)?
-    # TODO: Implement
+    # TODO(johan): Implement
     return np.array([data])
 
 
-def createInputFromWindows(windows):
+def create_input_from_windows(windows):
     # The LSTM layer expects 3D input, where the dimensions are (samples, time steps, features).
     # https://machinelearningmastery.com/reshape-input-data-long-short-term-memory-networks-keras/
-    return windows.reshape((len(windows), timestepWindowSize, channelCount))
+    return windows.reshape((len(windows), timestep_window_size, channel_count))
 
 
-model = createModel(timestepWindowSize, channelCount)
+model = create_model(timestep_window_size, channel_count)
 
-data = loadDataFile(dataFilePath)
-dataWindows = createWindows(data, timestepWindowSize)
+data = load_data_file(data_filepath)
+dataWindows = create_windows(data, timestep_window_size)
 
-input = createInputFromWindows(dataWindows)
+input = create_input_from_windows(dataWindows)
 
 # Here we need to train!
 
 # "Configures the model for training"
-# TODO: Might want to change the arguments.
+# TODO(johan): Might want to change the arguments.
 model.compile(
     loss=tf.keras.losses.MeanSquaredError(),
 )
 
-# TODO: Actually generate target labels properly.
-# TODO: Figure out what we should set the batch size to.
+# TODO(johan): Actually generate target labels properly.
+# TODO(johan): Figure out what we should set the batch size to.
 print("Starting training!")
 history = model.fit(input, np.array([np.array([1.0, 0.0, 0.0])]), epochs=3)
 print("Finished training!")
@@ -92,13 +92,13 @@ converter = tf.lite.TFLiteConverter.from_keras_model(model)
 tflite_model = converter.convert()
 
 # Save the model.
-with open(modelPath, "wb") as f:
+with open(model_path, "wb") as f:
     f.write(tflite_model)
 
 # ============== Everything below here is just for testing ==============
 
 # Load the model using TFLite/LiteRT.
-interpreter = tf.lite.Interpreter(model_path=modelPath)
+interpreter = tf.lite.Interpreter(model_path=model_path)
 interpreter.allocate_tensors()
 
 inputDetails = interpreter.get_input_details()
