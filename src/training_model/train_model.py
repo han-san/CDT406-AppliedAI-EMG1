@@ -16,6 +16,9 @@ data_filepath = ""
 
 def create_model(timesteps: int, samples: int):
     # Create the same type of model as in https://doi.org/10.3390/app12199700.
+    # TODO(johan): Check if we need to do more work for LSTM to be stateful.
+    #     - https://keras.io/getting_started/faq/#how-can-i-use-stateful-rnns
+    #     - https://www.tensorflow.org/tutorials/structured_data/time_series
     # The 'unroll=True' has to be set in the LSTM layer to be able to run the model using the tflite-runtime.
     # Otherwise the model contains the OP "FlexTensorListReserve" which is only available in
     # the regular tensorflow package.
