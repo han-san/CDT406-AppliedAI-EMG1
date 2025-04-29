@@ -9,6 +9,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
+import scipy as sp
 import tensorflow as tf  # type: ignore[import-untyped]
 
 # The amount of measurement readings we use as input.
@@ -25,6 +26,21 @@ class State(Enum):
     REST = (0.0, 0.0, 1.0)
 
 
+# FIXME: Maybe provide the ability to filter as a module in pre-processing?
+# Define filter parameters
+order = 4  # Filter order
+cutoff = 100  # Cutoff frequency in Hz
+fs = 1000  # Sampling frequency in Hz
+
+# Design a low-pass Butterworth filter
+b, a = sp.signal.butter(order, cutoff / (fs / 2), btype="low", analog=False)
+
+
+def filter_window(data: list[float]) -> npt.NDArray[np.float32]:
+    """Filter the data."""
+    return sp.signal.lfilter(b, a, np.array(data, dtype=np.float32))
+
+
 class Data:
     """Represents a list of data measurements."""
 
@@ -37,7 +53,19 @@ class Data:
             labels: list[State],
         ) -> None:
             """Construct a window of data."""
+
             self.window = np.array(window)
+
+            mean = np.mean(window)
+            std = np.std(window)
+            # mean subtraction
+            window = window - mean
+            window = np.abs(window)
+            window_normalized = (window - mean) / std
+            filtered_window = sp.signal.filtfilt(b, a, window_normalized)
+
+            # self.window = window_normalized
+            self.window = filtered_window
             self.labels = labels
 
         def __len__(self) -> int:
@@ -50,6 +78,14 @@ class Data:
     def __init__(self, data: list[float], labels: list[State]) -> None:
         """Construct a data object representing a list of float measurements."""
         self._data = np.array(data, dtype=np.float32)
+        # self._data = np.array(data, dtype=np.float32)
+        # plt.plot(data, color="green", label="Original Signal")
+        # plt.plot(self._data, color="red", label="Filtered Signal")
+        # plt.ylabel("Amplitude")
+        # plt.xlabel("Sample Number")
+        # plt.show()
+        # exit()
+
         self._labels = labels
 
     def window(self, begin: int, end: int) -> Window:
@@ -106,6 +142,7 @@ class Model:
             # TODO(johan): Might want to change the arguments.
             self.model.compile(
                 loss=tf.keras.losses.MeanSquaredError(),
+                metrics=["accuracy"],
             )
         else:
             msg = f"Trying to construct model with invalid enum value {model_type}"
