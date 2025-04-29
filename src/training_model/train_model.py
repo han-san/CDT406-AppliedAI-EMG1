@@ -12,6 +12,45 @@ from model import (
     timestep_window_size,
 )
 
+model_path = Path("../../model/model.tflite")
+
+
+def _load_and_run_tflite(
+    model_input: Model.Input,
+    expected_output: Model.Output,
+) -> None:
+    """Test the accuracy of the model."""
+    # Load the model using TFLite/LiteRT.
+    interpreter = tf.lite.Interpreter(model_path=str(model_path))
+    interpreter.allocate_tensors()
+
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+
+    input_shape = input_details[0]["shape"]
+
+    correct = 0
+    total = 0
+
+    for in_window, out in zip(model_input.input, expected_output.output):
+        input_data = in_window
+        input_data = input_data.reshape(input_shape)
+        interpreter.set_tensor(input_details[0]["index"], input_data)
+
+        interpreter.invoke()
+
+        # The function `get_tensor()` returns a copy of the tensor data.
+        # Use `tensor()` in order to get a pointer to the tensor.
+        output_data = interpreter.get_tensor(output_details[0]["index"])
+
+        if np.argmax(output_data[0]) == np.argmax(out):
+            correct += 1
+
+        total += 1
+
+    print(f"Accuracy: {correct / total * 100}%")
+
+
 data_dir = Path(sys.argv[1])
 assert data_dir.is_dir()
 # data_paths = list(data_dir.iterdir())
@@ -44,7 +83,6 @@ assert data_dir.is_dir()
 data_paths = list(data_dir.glob("**/*S1M[126]F*O2"))
 print(f"Loading {len(data_paths)} measurement files.")
 
-model = Model(Model.Type.LSTM, timestep_window_size, channel_count)
 
 data_measurements = load_data_files(data_paths)
 
@@ -61,7 +99,13 @@ model_input = Model.Input(model_windows)
 window_labels = [window.labels[0] for window in model_windows]
 model_desired_output = Model.Output(window_labels)
 
+if model_path.exists():
+    # FIXME(Johan): Use validation set to test.
+    _load_and_run_tflite(model_input, model_desired_output)
+    exit()
 
+
+model = Model(Model.Type.LSTM, timestep_window_size, channel_count)
 # FIXME: Figure out what batch_size we should have.
 model.train(model_input, model_desired_output, batch_size=1, epochs=5)
 
@@ -69,8 +113,6 @@ model.train(model_input, model_desired_output, batch_size=1, epochs=5)
 
 # desired_output_2 = model_desired_outputs[0].output
 # print(f"output: {output}, desired output: {desired_output_2}")
-
-exit()
 
 print(model.model.summary())
 print(f"input shape: {model.model.input_shape}")
@@ -80,30 +122,5 @@ converter = tf.lite.TFLiteConverter.from_keras_model(model.model)
 tflite_model = converter.convert()
 
 # Save the model.
-model_path = Path("../../model/model.tflite")
 with model_path.open("wb") as f:
     f.write(tflite_model)
-
-# ============== Everything below here is just for testing ==============
-
-# Load the model using TFLite/LiteRT.
-interpreter = tf.lite.Interpreter(model_path=str(model_path))
-interpreter.allocate_tensors()
-
-input_details = interpreter.get_input_details()
-output_details = interpreter.get_output_details()
-
-input_shape = input_details[0]["shape"]
-print(input_shape)
-input_data = np.array(np.random.random_sample(input_shape), dtype=np.float32)
-print(input_data)
-interpreter.set_tensor(input_details[0]["index"], input_data)
-
-interpreter.invoke()
-
-# The function `get_tensor()` returns a copy of the tensor data.
-# Use `tensor()` in order to get a pointer to the tensor.
-output_data = interpreter.get_tensor(output_details[0]["index"])
-
-# Actual results
-print(output_data)
