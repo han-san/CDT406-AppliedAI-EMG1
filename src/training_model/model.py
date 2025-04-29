@@ -181,11 +181,11 @@ def load_data_file(filepath: Path) -> Data:
     with filepath.open("r") as f:
         filename = filepath.name
         label = None
-        if "M2" in filename:
+        if "M1" in filename:
             label = State.GRIP
-        elif "M3" in filename:
+        elif "M2" in filename:
             label = State.RELEASE
-        elif "M4" in filename:
+        elif "M6" in filename:
             label = State.REST
         else:
             err = ValueError("The filename doesn't include a valid gesture classifier.")
