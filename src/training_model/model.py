@@ -194,7 +194,10 @@ def load_data_file(filepath: Path) -> Data:
             err = ValueError("The filename doesn't include a valid gesture classifier.")
             raise err
 
-        measurements = [float(s) for s in f.read().split(",")]
+        # FIXME: REMOVE TRIM WHEN HANDLING OWN MEASUREMENTS
+        #        We remove 3 seconds from the start of measurements
+        #        since they are in some kind of rest state
+        measurements = [float(s) for s in f.read().split(",")[3000:]]
         return Data(measurements, [label] * len(measurements))
 
 
