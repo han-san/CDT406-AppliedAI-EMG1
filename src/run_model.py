@@ -1,30 +1,45 @@
-import tflite_runtime.interpreter as tflite
+from pathlib import Path
+from typing import Any
+
 import numpy as np
 
-interpreter = tflite.Interpreter(model_path="./model.tflite")
+from data import Input, Output
 
-interpreter.allocate_tensors()
 
-input_details = interpreter.get_input_details()
-output_details = interpreter.get_output_details()
+def load_and_run_tflite(
+    interpreter: Any,  # Either tf.lite.Interpreter or tflite.interpreter.
+    model_path: Path,
+    model_input: Input,
+    expected_output: Output,
+) -> None:
+    """Test the accuracy of the model."""
+    # Load the model using TFLite/LiteRT.
+    interpreter = interpreter(model_path=str(model_path))
+    interpreter.allocate_tensors()
 
-input_shape = input_details[0]['shape']
-input_data = np.array(np.random.random_sample(input_shape), dtype=np.float32)
-interpreter.set_tensor(input_details[0]['index'], input_data)
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
 
-interpreter.invoke()
+    input_shape = input_details[0]["shape"]
 
-# The function `get_tensor()` returns a copy of the tensor data.
-# Use `tensor()` in order to get a pointer to the tensor.
-output_data = interpreter.get_tensor(output_details[0]['index'])
-print(output_data)
+    correct = 0
 
-input_data = np.array(np.random.random_sample(input_shape), dtype=np.float32)
-interpreter.set_tensor(input_details[0]['index'], input_data)
-interpreter.invoke()
+    for i, (in_window, out) in enumerate(
+        zip(model_input.input, expected_output.output),
+    ):
+        input_data = in_window
+        input_data = input_data.reshape(input_shape)
+        interpreter.set_tensor(input_details[0]["index"], input_data)
 
-# The function `get_tensor()` returns a copy of the tensor data.
-# Use `tensor()` in order to get a pointer to the tensor.
-output_data = interpreter.get_tensor(output_details[0]['index'])
-print(output_data)
+        interpreter.invoke()
 
+        # The function `get_tensor()` returns a copy of the tensor data.
+        # Use `tensor()` in order to get a pointer to the tensor.
+        output_data = interpreter.get_tensor(output_details[0]["index"])
+
+        if np.argmax(output_data[0]) == np.argmax(out):
+            correct += 1
+
+        total = i + 1
+
+        print(f"iteration: {total}, accuracy: {correct / total * 100}%     ", end="\r")

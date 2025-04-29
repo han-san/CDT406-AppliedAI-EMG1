@@ -6,6 +6,9 @@ import numpy.typing as npt
 
 # import scipy as sp  # type: ignore[import-untyped]
 
+# The amount of measurements included in each reading.
+channel_count = 1
+
 
 class State(Enum):
     """The output representing a state."""
@@ -125,3 +128,85 @@ def create_windows(data: Data, window_size: int) -> list[Data.Window]:
         data.window(i * window_size, i * window_size + window_size)
         for i in range(window_count)
     ]
+
+
+class Input:
+    """Input that can be fed to the AI model."""
+
+    def __init__(self, windows: list[Data.Window]) -> None:
+        """Construct input from windows."""
+        np_windows = np.array(
+            [window.window for window in windows],
+            dtype=np.float32,
+        )
+        # The LSTM layer expects 3D input, where the dimensions are
+        # (samples, time steps, features).
+        # https://machinelearningmastery.com/reshape-input-data-long-short-term-memory-networks-keras/
+        self.input = np_windows.reshape(
+            (len(np_windows), len(np_windows[0]), channel_count),
+        )
+
+    # 2D array
+    input: npt.NDArray[np.float32]
+
+
+class Output:
+    """Output from the AI model."""
+
+    def __init__(self, output_states: list[State]) -> None:
+        """Construct from the 2D output from the AI model."""
+        self.output = np.array(
+            [
+                np.array(output_state.value, dtype=np.float32)
+                for output_state in output_states
+            ],
+            dtype=np.float32,
+        )
+
+    # 2D array
+    output: npt.NDArray[np.float32]
+
+
+def get_input_and_output_from_data_files(data_dir: Path) -> tuple[Input, Output]:
+    """Load the input and output data from files in the provided directory."""
+    # https://www.nature.com/articles/s41597-023-02223-x
+    # Format for filenames in wyoflex dataset:
+    # P[1-28]C[1-3]S[1-4]M[1-10]F[1-2]O[1-2]
+    # P = participant
+    # C = cycle
+    # S = sensor (channel)
+    # M = movement
+    #     1 = flexion
+    #     2 = extension
+    #     3 = ulnar deviation
+    #     4 = radial deviation
+    #     5 = hook grip
+    #     6 = power grip
+    #     7 = spherical grip
+    #     8 = precision grip
+    #     9 = lateral grip
+    #     10 = pinch grip
+    # F = forearm
+    #     1 = right, 2 = left
+    # O = offset (sets the baseline at 0)
+    #     1 = no offset, 2 = offset
+    #     (The article says the opposite, but looking at the data says otherwise)
+    #
+    # currently testing movements 1, 2, and 6 with sensor 1 and offset
+
+    data_paths = list(data_dir.glob("**/*S1M[126]F*O2"))
+    print(f"Loading {len(data_paths)} measurement files.")
+
+    data_measurements = load_data_files(data_paths)
+
+    segmented_measurements = [create_windows(data, 200) for data in data_measurements]
+
+    # Flatten windows so we can train on them in one go.
+    model_windows = [item for row in segmented_measurements for item in row]
+    model_input = Input(model_windows)
+
+    # Since we haven't yet decided exactly how to handle the labeling, we use the label of
+    # the first measurement in the window as the desired label.
+    window_labels = [window.labels[0] for window in model_windows]
+    model_desired_output = Output(window_labels)
+    return model_input, model_desired_output

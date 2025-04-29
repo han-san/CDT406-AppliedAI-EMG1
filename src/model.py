@@ -4,19 +4,14 @@ Provides the functionality needed to create, train, and execute our AI model.
 """
 
 from enum import Enum
-from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
-import numpy.typing as npt
 import tensorflow as tf  # type: ignore[import-untyped]
 
-from data import Data, State
+from data import Input, Output
 
 # The amount of measurement readings we use as input.
 timestep_window_size = 200
-# The amount of measurements included in each reading.
-channel_count = 1
 
 
 class Model:
@@ -66,41 +61,6 @@ class Model:
         else:
             msg = f"Trying to construct model with invalid enum value {model_type}"
             raise ValueError(msg)
-
-    class Input:
-        """Input that can be fed to the AI model."""
-
-        def __init__(self, windows: list[Data.Window]) -> None:
-            """Construct input from windows."""
-            np_windows = np.array(
-                [window.window for window in windows],
-                dtype=np.float32,
-            )
-            # The LSTM layer expects 3D input, where the dimensions are
-            # (samples, time steps, features).
-            # https://machinelearningmastery.com/reshape-input-data-long-short-term-memory-networks-keras/
-            self.input = np_windows.reshape(
-                (len(np_windows), len(np_windows[0]), channel_count),
-            )
-
-        # 2D array
-        input: npt.NDArray[np.float32]
-
-    class Output:
-        """Output from the AI model."""
-
-        def __init__(self, output_states: list[State]) -> None:
-            """Construct from the 2D output from the AI model."""
-            self.output = np.array(
-                [
-                    np.array(output_state.value, dtype=np.float32)
-                    for output_state in output_states
-                ],
-                dtype=np.float32,
-            )
-
-        # 2D array
-        output: npt.NDArray[np.float32]
 
     def train(
         self,
