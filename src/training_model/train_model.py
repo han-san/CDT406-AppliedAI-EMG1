@@ -4,11 +4,10 @@ from pathlib import Path
 import numpy as np
 import tensorflow as tf  # type: ignore[import-untyped]
 
+from data import create_windows, load_data_files
 from model import (
     Model,
     channel_count,
-    create_windows,
-    load_data_files,
     timestep_window_size,
 )
 
