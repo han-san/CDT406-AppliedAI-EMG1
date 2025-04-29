@@ -49,7 +49,7 @@ class Data:
 
     def __init__(self, data: list[float], labels: list[State]) -> None:
         """Construct a data object representing a list of float measurements."""
-        self._data = np.array(data)
+        self._data = np.array(data, dtype=np.float32)
         self._labels = labels
 
     def window(self, begin: int, end: int) -> Window:
@@ -113,7 +113,10 @@ class Model:
 
         def __init__(self, windows: list[Data.Window]) -> None:
             """Construct input from windows."""
-            np_windows = np.array([window.window for window in windows])
+            np_windows = np.array(
+                [window.window for window in windows],
+                dtype=np.float32,
+            )
             # The LSTM layer expects 3D input, where the dimensions are
             # (samples, time steps, features).
             # https://machinelearningmastery.com/reshape-input-data-long-short-term-memory-networks-keras/
@@ -130,7 +133,11 @@ class Model:
         def __init__(self, output_states: list[State]) -> None:
             """Construct from the 2D output from the AI model."""
             self.output = np.array(
-                [np.array(output_state.value) for output_state in output_states]
+                [
+                    np.array(output_state.value, dtype=np.float32)
+                    for output_state in output_states
+                ],
+                dtype=np.float32,
             )
 
         # 2D array
