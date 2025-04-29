@@ -6,10 +6,10 @@ Provides the functionality needed to create, train, and execute our AI model.
 from enum import Enum
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 import tensorflow as tf  # type: ignore[import-untyped]
-import matplotlib.pyplot as plt
 
 # The amount of measurement readings we use as input.
 timestep_window_size = 200
