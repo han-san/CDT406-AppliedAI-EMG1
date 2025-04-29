@@ -87,14 +87,17 @@ class Model:
                 [
                     tf.keras.Input(shape=(timesteps, samples)),
                     tf.keras.layers.Dense(
-                        units=32, activation=tf.keras.activations.tanh
+                        units=32,
+                        activation=tf.keras.activations.tanh,
                     ),
                     tf.keras.layers.LSTM(units=16, unroll=True),
                     tf.keras.layers.Dense(
-                        units=32, activation=tf.keras.activations.tanh
+                        units=32,
+                        activation=tf.keras.activations.tanh,
                     ),
                     tf.keras.layers.Dense(
-                        units=3, activation=tf.keras.activations.softmax
+                        units=3,
+                        activation=tf.keras.activations.softmax,
                     ),
                 ],
             )
