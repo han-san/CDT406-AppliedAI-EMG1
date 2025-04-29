@@ -15,7 +15,33 @@ from model import (
 data_dir = Path(sys.argv[1])
 assert data_dir.is_dir()
 # data_paths = list(data_dir.iterdir())
-data_paths = list(data_dir.glob("**/*M[2-4]*"))
+
+# https://www.nature.com/articles/s41597-023-02223-x
+# Format for filenames in wyoflex dataset:
+# P[1-28]C[1-3]S[1-4]M[1-10]F[1-2]O[1-2]
+# P = participant
+# C = cycle
+# S = sensor (channel)
+# M = movement
+#     1 = flexion
+#     2 = extension
+#     3 = ulnar deviation
+#     4 = radial deviation
+#     5 = hook grip
+#     6 = power grip
+#     7 = spherical grip
+#     8 = precision grip
+#     9 = lateral grip
+#     10 = pinch grip
+# F = forearm
+#     1 = right, 2 = left
+# O = offset (sets the baseline at 0)
+#     1 = no offset, 2 = offset
+#     (The article says the opposite, but looking at the data says otherwise)
+#
+# currently testing movements 1, 2, and 6 with sensor 1 and offset
+
+data_paths = list(data_dir.glob("**/*S1M[126]F*O2"))
 print(f"Loading {len(data_paths)} measurement files.")
 
 model = Model(Model.Type.LSTM, timestep_window_size, channel_count)
