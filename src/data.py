@@ -118,15 +118,26 @@ def load_data_files(filepaths: list[Path]) -> list[Data]:
     return [load_data_file(path) for path in filepaths]
 
 
-def create_windows(data: Data, window_size: int) -> list[Data.Window]:
+def create_windows(data: Data, *, window_size: int, overlap: int) -> list[Data.Window]:
     """Split measurements into multiple windows."""
     # TODO(johan): Decide what to do with the last window if it is < windowSize.
     #   - ignore?
     #   - use average of all measurements (a group from previous years did this)?
-    window_count = len(data) // window_size
+    data_windows = np.lib.stride_tricks.sliding_window_view(data._data, window_size)[
+        :: window_size - overlap,
+        :,
+    ]
+    label_value_windows = np.lib.stride_tricks.sliding_window_view(
+        np.array(data._labels),
+        window_size,
+    )[:: window_size - overlap, :]
+    label_windows = [
+        [State(value) for value in window] for window in label_value_windows
+    ]
+
     return [
-        data.window(i * window_size, i * window_size + window_size)
-        for i in range(window_count)
+        Data.Window(np.array(window), labels)
+        for window, labels in zip(data_windows, label_windows)
     ]
 
 
@@ -199,7 +210,9 @@ def get_input_and_output_from_data_files(data_dir: Path) -> tuple[Input, Output]
 
     data_measurements = load_data_files(data_paths)
 
-    segmented_measurements = [create_windows(data, 200) for data in data_measurements]
+    segmented_measurements = [
+        create_windows(data, window_size=200, overlap=50) for data in data_measurements
+    ]
 
     # Flatten windows so we can train on them in one go.
     model_windows = [item for row in segmented_measurements for item in row]
