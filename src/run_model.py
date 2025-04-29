@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +28,7 @@ def load_and_run_tflite(
     for i, (in_window, out) in enumerate(
         zip(model_input.input, expected_output.output),
     ):
+        start = time.perf_counter()
         input_data = in_window
         input_data = input_data.reshape(input_shape)
         interpreter.set_tensor(input_details[0]["index"], input_data)
@@ -37,9 +39,14 @@ def load_and_run_tflite(
         # Use `tensor()` in order to get a pointer to the tensor.
         output_data = interpreter.get_tensor(output_details[0]["index"])
 
+        dt = time.perf_counter() - start
+
         if np.argmax(output_data[0]) == np.argmax(out):
             correct += 1
 
         total = i + 1
 
-        print(f"iteration: {total}, accuracy: {correct / total * 100}%     ", end="\r")
+        print(
+            f"dt: {dt}s, iteration: {total}, accuracy: {correct / total * 100}%     ",
+            end="\r",
+        )
