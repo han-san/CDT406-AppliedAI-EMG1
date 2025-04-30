@@ -47,6 +47,6 @@ def load_and_run_tflite(
         total = i + 1
 
         print(
-            f"dt: {dt}s, iteration: {total}, accuracy: {correct / total * 100}%     ",
-            end="\r",
+            f"\rdt: {dt}s, iteration: {total}, accuracy: {correct / total * 100}%     ",
+            end="",
         )
