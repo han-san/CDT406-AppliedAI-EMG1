@@ -3,12 +3,16 @@
 Provides the functionality needed to create, train, and execute our AI model.
 """
 
+from __future__ import annotations
+
 from enum import Enum
+from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import tensorflow as tf  # type: ignore[import-untyped]
 
-from data import Input, Output
+if TYPE_CHECKING:
+    from data import Input, Output
 
 # The amount of measurement readings we use as input.
 timestep_window_size = 200
@@ -46,7 +50,7 @@ class Model:
                         activation=tf.keras.activations.tanh,
                     ),
                     tf.keras.layers.Dense(
-                        units=3,
+                        units=4,
                         activation=tf.keras.activations.softmax,
                     ),
                 ],
