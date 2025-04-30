@@ -1,86 +1,132 @@
-from cProfile import label
-
 import scipy as sp
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
 from scipy.signal import freqz
+# C:\Users\old22001\Downloads\testP.csv
+#C:\Users\old22001\Downloads\WyoFlex_Dataset\WyoFlex_Dataset\VOLTAGE DATA\P1C1S1M1F1O1
 
 # Load the CSV file without headers
 data = pd.read_csv(r'C:\Users\old22001\Downloads\WyoFlex_Dataset\WyoFlex_Dataset\VOLTAGE DATA\P1C1S1M1F1O1', header=None)
-# Convert the data to a NumPy array
+# from pathlib import Path
+# with Path(r'C:\Users\old22001\Downloads\testP1.txt').open() as file:
+#     file.read()
+
+# # Convert the data to a NumPy array
 data_array = data.to_numpy()
-
-# Convert the data to a 1D NumPy array
+# data_array = data["C2 (V)"].to_numpy()
+# data_array_time = data["Time (s)"].to_numpy()
+#
+# # Convert the data to a 1D NumPy array
 data_array = data_array.flatten()
+#
+#plotly plot
+# fig = go.Figure([go.Scatter(x=data_array_time, y=data_array)])
+# fig.show()
 
-
-# Define filter parameters
-order = 4  # Filter order
-cutoff = 100  # Cutoff frequency in Hz
-fs = 1000  # Sampling frequency in Hz
-
-# Design a low-pass Butterworth filter
-b, a = sp.signal.butter(order, cutoff / (fs / 2), btype='low', analog=False)
-
-print(b)
-print(a)
-
-# Create a window from the first 200 samples
-window = data_array[8000:11000]  # Adjust the indices as needed
-
-#calculate the mean and standard deviation
-mean = np.mean(window)
-std = np.std(window)
-
-#mean subtraction
-window = window - mean
-
-#plot after mean subtraction
 plt.figure()
-plt.plot(window, label='Windowed Data (First 200 Samples)')
+plt.plot(data_array, label='Data')
 plt.ylabel('Amplitude')
 plt.xlabel('Sample Number')
-plt.title('Windowed Data (Mean Subtracted)')
+plt.title('Windowed Data')
 plt.legend()
 plt.show()
 
+def filter_function(data_array, filter):
+    """
+    This function applies mean subtraction, absolute value, normalization
+    and a low-pass Butterworth filter to the input data array.
+    Parameters: data_array (numpy.ndarray): The input data array to be processed.
+                filter (int): If 1, apply the filter; if 0, do not apply the filter.
+    """
+    # Numerators and denominators for a low-pass Butterworth filter
+    # 8th order low-pass Butterworth filter fs = 1000 Hz fc = 200 Hz
+    a1 = [1, -1.5906, 2.0838, -1.5326, 0.8694, -0.3192, 0.0821, -0.0122, 0.0009]
+    b1 = [0.0023, 0.0182, 0.0636, 0.1272, 0.1590, 0.1272, 0.0636, 0.0182, 0.0023]
+
+    # calculate the mean
+    mean = np.mean(data_array)
+
+    # mean subtraction
+    data_array = data_array - mean
+    print(data_array)
+
+    # plot after mean subtraction
+    plt.figure()
+    plt.plot(data_array, label='Windowed Data (200 Samples)')
+    plt.ylabel('Amplitude')
+    plt.xlabel('Sample Number')
+    plt.title('Windowed Data (Mean Subtracted)')
+    plt.legend()
+    plt.show()
+
+    # absolute value
+    data_array = np.abs(data_array)
+    print(data_array)
+
+    mean = np.mean(data_array)
+    std = np.std(data_array)
+
+    # plot after absolute value
+    plt.figure()
+    plt.plot(data_array, label='Windowed Data (200 Samples)')
+    plt.ylabel('Amplitude')
+    plt.xlabel('Sample Number')
+    plt.title('Windowed Data (Absolute Value)')
+    plt.legend()
+    plt.show()
+
+    # normalize the data
+    data_array_normalized = (data_array - mean) / std
+
+    print(data_array_normalized)
+
+    # Plot the normalized windowed data
+    plt.figure()
+    plt.plot(data_array_normalized, label='Windowed Data (200 Samples)')
+    plt.ylabel('Amplitude')
+    plt.xlabel('Sample Number')
+    plt.title('Windowed Data (Normalized)')
+    plt.legend()
+    plt.show()
+
+    # Apply the filter to the windowed data
+    # filtfilt means 16th order filter but zero phase distortion
+    if filter == 1:
+        # Apply the filter to the windowed data
+        filtered_data_array = sp.signal.filtfilt(b1, a1, data_array_normalized)
+
+        # plot the filtered windowed data
+        # plt.figure()
+        # plt.plot(filtered_window, label='Windowed Data (200 Samples)')
+        # plt.ylabel('Amplitude')
+        # plt.xlabel('Sample Number')
+        # plt.title('Windowed Data (Filtered)')
+        # plt.legend()
+        # plt.show()
+
+        return filtered_data_array
+    else:
+        # return normalized data
+        return data_array_normalized
 
 
-#absolute value
-window = np.abs(window)
+# # Create a window from the first 200 samples
+window = data_array[:100]  # Adjust the indices as needed
 
-#plot after absolute value
+# # Call the filter_function with the data_array
+filtered_data = filter_function(window, 0)
+#
+# # Optionally, plot the filtered data
 plt.figure()
-plt.plot(window, label='Windowed Data (First 200 Samples)')
+plt.plot(filtered_data, label='Filtered Data')
 plt.ylabel('Amplitude')
 plt.xlabel('Sample Number')
-plt.title('Windowed Data (Absolute Value)')
+plt.title('Filtered Data')
 plt.legend()
 plt.show()
 
-#normalize the data
-window_normalized = (window - mean) / std
-
-# Plot the normalized windowed data
-plt.figure()
-plt.plot(window_normalized, label='Windowed Data (First 200 Samples)')
-plt.ylabel('Amplitude')
-plt.xlabel('Sample Number')
-plt.title('Windowed Data (Normalized)')
-plt.legend()
-plt.show()
-
-# Apply the filter to the windowed data
-filtered_window = sp.signal.filtfilt(b, a, window)
-
-# plot the filtered windowed data
-plt.figure()
-plt.plot(filtered_window, label='Windowed Data (First 200 Samples)')
-plt.ylabel('Amplitude')
-plt.xlabel('Sample Number')
-plt.title('Windowed Data (Filtered)')
-plt.legend()
-plt.show()
-
+fig = go.Figure([go.Scatter(x=data_array_time, y=filtered_data)])
+fig.show()
 
