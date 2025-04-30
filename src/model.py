@@ -71,16 +71,17 @@ class Model:
         model_input: Input,
         desired_output: Output,
         *,
-        batch_size: int,
+        batch_size: int | None,
         epochs: int,
     ) -> None:
         """Train the model using the provided input for some number of epochs."""
-        # TODO(johan): Actually generate target labels properly.
         # TODO(johan): Figure out what we should set the batch size to.
+        # TODO(johan): We want to split input into validation/testing sets.
         print("Starting training!")
         history = self.model.fit(
             model_input.input,
             desired_output.output,
+            batch_size=batch_size,
             epochs=epochs,
             verbose=2,
         )
