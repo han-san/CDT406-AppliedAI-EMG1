@@ -4,6 +4,7 @@ from pathlib import Path
 import tensorflow as tf  # type: ignore[import-untyped]
 
 from data import (
+    DataType,
     channel_count,
     get_input_and_output_from_data_files,
 )
@@ -19,7 +20,10 @@ model_path = Path("../model/model.tflite")
 data_dir = Path(sys.argv[1])
 assert data_dir.is_dir()
 
-model_input, model_desired_output = get_input_and_output_from_data_files(data_dir)
+model_input, model_desired_output = get_input_and_output_from_data_files(
+    data_dir,
+    DataType.OURS,
+)
 
 if model_path.exists():
     # FIXME(Johan): Use validation set to test.
