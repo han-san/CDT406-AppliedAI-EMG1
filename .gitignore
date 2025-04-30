@@ -339,3 +339,8 @@ codegen/
 
 # Octave session info
 octave-workspace
+
+
+#OUR STUFF
+measurements/
+dataset/
