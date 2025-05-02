@@ -4,6 +4,7 @@ import time
 from dwfconstants import *
 import matplotlib.pyplot as plt
 import numpy
+import pandas as pd
 
 if sys.platform.startswith("win"):
     dwf = cdll.dwf
@@ -11,6 +12,11 @@ elif sys.platform.startswith("darwin"):
     dwf = cdll.LoadLibrary("/Library/Frameworks/dwf.framework/dwf")
 else:
     dwf = cdll.LoadLibrary("libdwf.so")
+
+import exp_LED as led
+from experiment import Experiment
+import exp_instructions as inst
+import exp_states as states
 
 #check library loading errors
 szerr = create_string_buffer(512)
@@ -26,8 +32,6 @@ cInfo = c_int()
 iDevId = c_int()
 iDevRev = c_int()
 hzAcq = c_double(5000)
-nSamples = 70000
-rgdSamples = (c_double*nSamples)()
 cAvailable = c_int()
 cLost = c_int()
 cCorrupted = c_int()
@@ -43,30 +47,67 @@ green_pin = 10
 fLost = 0
 fCorrupted = 0
 
-red_one = 3.5
-yellow_one = 4.0
-green_one = 4.5
-led_over_one = 5.0
-red_two = 7.5
-yellow_two = 8.0
-green_two = 8.5
-led_over_two = 9.0
+script = [
+    inst.ExperimentInstructionsChangeState(0),
+    inst.ExperimentInstructionsWait(3.5), #3.5
+    inst.ExperimentInstructionsLEDOn(red_pin),
+    inst.ExperimentInstructionsWait(0.5), # 4
+    inst.ExperimentInstructionsLEDOff(red_pin),
+    inst.ExperimentInstructionsLEDOn(yellow_pin),
+    inst.ExperimentInstructionsWait(0.5), # 4.5
+    inst.ExperimentInstructionsLEDOff(yellow_pin),
+    inst.ExperimentInstructionsLEDOn(green_pin),
+    inst.ExperimentInstructionsWait(0.5), # 5
+    inst.ExperimentInstructionsLEDOff(green_pin),
+    inst.ExperimentInstructionsChangeState(1),
+    inst.ExperimentInstructionsWait(0.5), # 5.5
+    inst.ExperimentInstructionsChangeState(2),
+    inst.ExperimentInstructionsWait(2), # 7.5
+    inst.ExperimentInstructionsLEDOn(red_pin),
+    inst.ExperimentInstructionsWait(0.5), # 8
+    inst.ExperimentInstructionsLEDOff(red_pin),
+    inst.ExperimentInstructionsLEDOn(yellow_pin),
+    inst.ExperimentInstructionsWait(0.5), # 8.5
+    inst.ExperimentInstructionsLEDOff(yellow_pin),
+    inst.ExperimentInstructionsLEDOn(green_pin),
+    inst.ExperimentInstructionsWait(0.5), # 9
+    inst.ExperimentInstructionsLEDOff(green_pin),
+    inst.ExperimentInstructionsChangeState(3),
+    inst.ExperimentInstructionsWait(0.5), # 9.5
+    inst.ExperimentInstructionsChangeState(0),
+    inst.ExperimentInstructionsWait(8), # 17.5
+    inst.ExperimentInstructionsLEDOn(red_pin),
+    inst.ExperimentInstructionsWait(0.5), # 18
+    inst.ExperimentInstructionsLEDOff(red_pin),
+    inst.ExperimentInstructionsLEDOn(yellow_pin),
+    inst.ExperimentInstructionsWait(0.5), # 18.5
+    inst.ExperimentInstructionsLEDOff(yellow_pin),
+    inst.ExperimentInstructionsLEDOn(green_pin),
+    inst.ExperimentInstructionsWait(0.5), # 19
+    inst.ExperimentInstructionsLEDOff(green_pin),
+    inst.ExperimentInstructionsChangeState(1),
+    inst.ExperimentInstructionsWait(0.5), # 19.5
+    inst.ExperimentInstructionsChangeState(2),
+    inst.ExperimentInstructionsWait(8), # 27.5
+    inst.ExperimentInstructionsLEDOn(red_pin),
+    inst.ExperimentInstructionsWait(0.5), # 28
+    inst.ExperimentInstructionsLEDOff(red_pin),
+    inst.ExperimentInstructionsLEDOn(yellow_pin),
+    inst.ExperimentInstructionsWait(0.5), # 28.5
+    inst.ExperimentInstructionsLEDOff(yellow_pin),
+    inst.ExperimentInstructionsLEDOn(green_pin),
+    inst.ExperimentInstructionsWait(0.5), # 29
+    inst.ExperimentInstructionsLEDOff(green_pin),
+    inst.ExperimentInstructionsChangeState(3),
+    inst.ExperimentInstructionsWait(0.5), # 29.5
+    inst.ExperimentInstructionsChangeState(0),
+    inst.ExperimentInstructionsWait(4.5), # 34
+]
 
-def configure_LED(pin):
-    # prescaler to 2kHz, SystemFrequency/1kHz/2
-    dwf.FDwfDigitalOutDividerSet(hdwf, c_int(pin), c_int(int(hzSys.value/50/2)))
-    # 1 tick low, 1 tick high
-    dwf.FDwfDigitalOutCounterSet(hdwf, c_int(pin), c_int(1), c_int(1))
-
-def turnon_LED(pin):
-    # 100 Hz pulse on IO 
-    dwf.FDwfDigitalOutEnableSet(hdwf, c_int(pin), c_int(1))
-    # Generate pattern
-    dwf.FDwfDigitalOutConfigure(hdwf, c_int(1))
-
-def turnoff_LED(pin):
-    dwf.FDwfDigitalOutEnableSet(hdwf, c_int(pin), c_int(0))
-    dwf.FDwfDigitalOutConfigure(hdwf, c_int(0))
+exp = Experiment(int(hzAcq.value), red_pin, yellow_pin, green_pin, hdwf)
+exp.read_instructions(script)
+nSamples = int(exp.experiment_duration())
+rgdSamples = (c_double*nSamples)()
 
 #print DWF version
 version = create_string_buffer(16)
@@ -106,10 +147,6 @@ dwf.FDwfDigitalOutReset(hdwf)
 # Turn off auto-configuration
 dwf.FDwfDeviceAutoConfigureSet(hdwf, c_int(0))
 
-cBufMax = c_int()
-dwf.FDwfAnalogInBufferSizeInfo(hdwf, 0, byref(cBufMax))
-print("Device buffer size: "+str(cBufMax.value)) 
-
 #Reading clock frequency
 #c_double(100 000 000.0)
 hzSys = c_double()
@@ -127,20 +164,16 @@ dwf.FDwfAnalogInConfigure(hdwf, c_int(1), c_int(0))
 time.sleep(3)
 
 #set up LEDs
-configure_LED(red_pin)
-configure_LED(yellow_pin)
-configure_LED(green_pin)
+led.configure_LED(hdwf, red_pin, int(hzAcq.value))
+led.configure_LED(hdwf, yellow_pin, int(hzAcq.value))
+led.configure_LED(hdwf, green_pin, int(hzAcq.value))
 
 print("Starting oscilloscope")
 dwf.FDwfAnalogInConfigure(hdwf, c_int(0), c_int(1))
 
 cSamples = 0
-red_f = False # red LED is ON
-yellow_f = False # yellow LED is ON
-green_f = False # green LED is ON
-over_f = True # all LEDs are OFF
-hold_start = 0 # end of the first LED cycle
-hold_finish = 0 # end of the second LED cycle
+state = states.ExperimentStates.REST
+exp.actual_experiment_state(state, cSamples)
 
 while cSamples < nSamples:
     dwf.FDwfAnalogInStatus(hdwf, c_int(1), byref(sts))
@@ -166,35 +199,11 @@ while cSamples < nSamples:
     dwf.FDwfAnalogInStatusData(hdwf, c_int(1), byref(rgdSamples, sizeof(c_double)*cSamples), cAvailable) # get channel 2 data
     cSamples += cAvailable.value
 
-    freq = hzAcq.value
-
-    if (((cSamples >= red_one * freq and cSamples < yellow_one * freq) or (cSamples >= red_two * freq and cSamples < yellow_two * freq)) and not red_f):
-        turnon_LED(red_pin)
-        # print('cSamples Red: '+str(cSamples))
-        red_f = True
-        over_f = False
-    elif (((cSamples >= yellow_one * freq and cSamples < green_one * freq) or (cSamples >= yellow_two * freq and cSamples < green_two * freq)) and not yellow_f):
-        turnoff_LED(red_pin)
-        turnon_LED(yellow_pin)
-        # print('cSamples Yellow: '+str(cSamples))
-        yellow_f = True
-    elif (((cSamples >= green_one * freq and cSamples < led_over_one * freq) or (cSamples >= green_two * freq and cSamples < led_over_two * freq)) and not green_f):
-        turnoff_LED(yellow_pin)
-        turnon_LED(green_pin)
-        green_f = True
-        # print('cSamples Green: '+str(cSamples))
-    elif (((cSamples >= led_over_one * freq and cSamples < red_two * freq) or (cSamples >= led_over_two * freq)) and not over_f):
-        turnoff_LED(green_pin)
-        red_f = False
-        yellow_f = False
-        green_f = False
-        over_f = True
-        # print('cSamples Over: '+str(cSamples))
-        if (cSamples < led_over_two * freq):
-            hold_start = cSamples
-        else:
-            hold_finish = cSamples
-
+    old_state = state
+    state = exp.state(state, cSamples)
+    exp.event(cSamples)
+    if (old_state != state):
+        exp.actual_experiment_state(state, cSamples)
 
 if hdwf.value != 0:
     dwf.FDwfDigitalOutReset(hdwf)
@@ -209,26 +218,19 @@ if fCorrupted:
     print("Samples could be corrupted! Reduce frequency")
 
 start = 0
+state = states.ExperimentStates.REST
+samples = []
 f = open(time.strftime("%d%m-%H%M%S", time.localtime())+"record.csv", "w")
-# for v in rgdSamples:
-#     f.write("%s,%s\n" % (start,v))
-#     start += 1 / freq
-# f.close()
-state = 0 # 0 - rest, 1 - grip, 2 - hold, 3 - release
-grip_interval = 0.5 * freq
-release_interval = 0.5 * freq
 for i in range(len(rgdSamples)):
-    if (i >= hold_start and i < hold_start + grip_interval):
-        state = 1
-    elif (i >= hold_start + grip_interval and i < hold_finish):
-        state = 2
-    elif (i >= hold_finish and i < hold_finish + release_interval):
-        state = 3
-    else:
-        state = 0
-    f.write("%s,%s,%s\n" % (start, rgdSamples[i], state))
-    start += 1/freq
+    state = exp.act_state(state, i)
+    entry = (start, rgdSamples[i], state.value)
+    f.write("%s,%s,%s\n" % entry)
+    samples.append(entry)
+    start += 1/hzAcq.value
 f.close()
-  
-plt.plot(numpy.fromiter(rgdSamples, dtype = float)[1::10])
+
+df = pd.DataFrame(samples, columns= ['Time', 'Voltage', 'State'])
+df.plot(x = 0, title = f.name)
+
+# plt.plot(numpy.fromiter(rgdSamples, dtype = float)[0::10])
 plt.show()
