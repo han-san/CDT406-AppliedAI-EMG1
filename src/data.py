@@ -25,7 +25,7 @@ class State(Enum):
     HOLD = (0.0, 0.0, 0.0, 1.0)
 
 
-# FIXME: Maybe provide the ability to filter as a module in pre-processing?
+# FIXME: Maybe provide the ability to filter as a module in preprocessing?
 # Define filter parameters
 order = 4  # Filter order
 cutoff = 100  # Cutoff frequency in Hz
