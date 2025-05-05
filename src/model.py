@@ -65,7 +65,7 @@ class Model:
             # TODO(johan): Might want to change the arguments.
             self.model.compile(
                 loss=tf.keras.losses.MeanSquaredError(),
-                metrics=["accuracy"],
+                metrics=["accuracy", tf.keras.metrics.F1Score(average="macro")],
             )
         else:
             msg = f"Trying to construct model with invalid enum value {model_type}"
@@ -94,6 +94,7 @@ class Model:
         print(history.history)
         plt.plot(history.history["accuracy"], label="Accuracy")
         plt.plot(history.history["loss"], label="Loss")
+        plt.plot(history.history["f1_score"], label="f1")
         plt.legend()
         plt.title("Model Loss and Accuracy")
         plt.ylabel("Loss/Accuracy")
