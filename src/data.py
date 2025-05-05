@@ -297,8 +297,9 @@ def get_input_and_output_from_data_files(
 ) -> tuple[Input, Output]:
     if data_type == DataType.MYOFLEX:
         return get_io_from_myoflex(data_dir)
-    elif data_type == DataType.OURS:
+
+    if data_type == DataType.OURS:
         return get_io_from_our_data(data_dir)
-    else:
-        err = ValueError("DataType variable contains invalid enum type.")
-        raise err
+
+    err = ValueError("DataType variable contains invalid enum type.")
+    raise err
