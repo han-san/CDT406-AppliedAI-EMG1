@@ -1,10 +1,15 @@
-import scipy as sp
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-from scipy.signal import freqz
+from enum import Enum
+from scipy.signal import lfilter
 # from pathlib import Path
 
+
+class filter (Enum):
+    """
+    Enum class for filter options.
+    """
+    NO_FILTER = 0
+    FILTER = 1
 
 def filter_function(data_array, filter):
     """
@@ -13,38 +18,41 @@ def filter_function(data_array, filter):
     Parameters: data_array (numpy.ndarray): The input data array to be processed.
                 filter (int): If 1, apply the filter; if 0, do not apply the filter.
     """
-    # Numerators and denominators for a low-pass Butterworth filter
-    #8th order low-pass Butterworth filter fs = 1000 Hz fc = 200 Hz
-    a1 = [1, -1.5906, 2.0838, -1.5326, 0.8694, -0.3192, 0.0821, -0.0122, 0.0009]
-    b1 = [0.0023, 0.0182, 0.0636, 0.1272, 0.1590, 0.1272, 0.0636, 0.0182, 0.0023]
+    # Numerators and denominators for a band-pass Butterworth filter
+    # 4th order band-pass Butterworth filter fs = 5000 Hz fc1 = 20 Hz fc2 = 600 Hz designed in Matlab
+    b1 = np.array([0.0042, 0., -0.0168, 0., 0.0252, 0., -0.0168, 0., 0.0042])
+    a1 = np.array([1.0000, -6.3816, 17.8992, -28.8773, 29.3561, -19.2729, 7.9812, -1.9056, 0.2009])
 
+    # calculate the mean
+    mean = float(np.mean(data_array))
 
-    #calculate the mean
-    mean = np.mean(data_array)
-
-    #mean subtraction
-    data_array = data_array - mean
-
-    #absolute value
-    data_array = np.abs(data_array)
-
-    #calculate the std and mean
-    std = np.std(data_array)
-    mean = np.mean(data_array)
-
-    #normalize the data
-    data_array_normalized = (data_array - mean) / std
+    # mean subtraction
+    data_array_centered = data_array - mean
 
     # Apply the filter to the windowed data
-    # filtfilt means 16th order filter but zero phase distortion
+    # filtfilt means 8th order filter but zero phase distortion
     if filter == 1:
         # Apply the filter to the windowed data
-        filtered_data_array = sp.signal.filtfilt(b1, a1, data_array_normalized)
+        filtered_data_array = lfilter(b1, a1, data_array_centered)
+        # absolute value
+        filtered_data_array_abs = np.abs(filtered_data_array)
 
-        return filtered_data_array
+        # normalize the data
+        data_array_filtered_output = (filtered_data_array_abs - np.min(filtered_data_array_abs)) / (
+                    np.max(filtered_data_array_abs) - np.min(filtered_data_array_abs))
+
+        # return filtered and normalized data
+        return data_array_filtered_output
     else:
+        # absolute value
+        data_array_centered_abs = np.abs(data_array_centered)
+
+        # normalize the data
+        data_array_output = (data_array_centered_abs - np.min(data_array_centered_abs)) / (
+                    np.max(data_array_centered_abs) - np.min(data_array_centered_abs))
+
         # return normalized data
-        return data_array_normalized
+        return data_array_output
 
 
 # Call the filter_function with the data_array

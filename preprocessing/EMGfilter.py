@@ -6,6 +6,8 @@ import plotly.graph_objects as go
 from enum import Enum
 from scipy.signal import freqz
 from scipy.signal import filtfilt
+from scipy.signal import butter
+from scipy.signal import lfilter
 
 
 # C:\Users\old22001\Downloads\testP.csv
@@ -50,10 +52,18 @@ def filter_function(data_array, filter):
     Parameters: data_array (numpy.ndarray): The input data array to be processed.
                 filter (int): If 1, apply the filter; if 0, do not apply the filter.
     """
+    #0.0042	0	-0.0168	0	0.0252	0	-0.0168	0	0.0042
     # Numerators and denominators for a low-pass Butterworth filter b = numerator a = denominator
     #4th order band-pass Butterworth filter fs = 5000 Hz fc1 = 20 Hz fc2 = 600 Hz
-    b = [0.0043, 0, -0.0174, 0, 0.0261, 0, -0.0174, 0, 0.0043]
-    a = [1, -6.3787, 17.8726, -28.7901, 29.2087, -19.1294, 7.8992, -1.8798, 0.1974]
+    b1 = np.array([0.0042,	0.,	-0.0168,	0.,	0.0252,	0.,	-0.0168,	0.,	0.0042])
+    a1 = np.array([1.0000,	-6.3816,	17.8992,	-28.8773,	29.3561,	-19.2729,	7.9812,	-1.9056,	0.2009])
+
+    # Testing butterworth filter
+   # b, a = butter(4, [20, 500], 'bandpass', analog=False, output='ba', fs=5000)
+    #print(b)
+    #print(a)
+    print(b1)
+    print(a1)
 
     # calculate the mean
     mean = float(np.mean(data_array))
@@ -74,7 +84,7 @@ def filter_function(data_array, filter):
     # filtfilt means 8th order filter but zero phase distortion
     if filter == 1:
         # Apply the filter to the windowed data
-        filtered_data_array = filtfilt(b, a, data_array_centered)
+        filtered_data_array = lfilter(b1, a1, data_array_centered)
 
         # plot after filtering
         plt.figure()
@@ -89,13 +99,14 @@ def filter_function(data_array, filter):
         filtered_data_array_abs = np.abs(filtered_data_array)
 
         # calculate the std and mean from filtered data
-        mean = float(np.mean(filtered_data_array_abs))
-        std = np.std(filtered_data_array_abs)
+        #mean = float(np.mean(filtered_data_array_abs))
+        #std = np.std(filtered_data_array_abs)
         # normalize the data
-        data_array_filtered_normalized = (filtered_data_array_abs - mean) / std
+        data_array_filtered_output = (filtered_data_array_abs - np.min(filtered_data_array_abs)) / (
+                np.max(filtered_data_array_abs) - np.min(filtered_data_array_abs))
 
         #return filtered and normalized data
-        return data_array_filtered_normalized
+        return data_array_filtered_output
     else:
         # absolute value
         data_array_centered_abs = np.abs(data_array_centered)
@@ -121,10 +132,10 @@ def filter_function(data_array, filter):
 
 
 # # Create a window from the first 200 samples
-window = data_array[:1000]  # Adjust the indices as needed
+window = data_array[:100]  # Adjust the indices as needed
 
 # # Call the filter_function with the data_array
-filtered_data = filter_function(data_array, 0)
+filtered_data = filter_function(window, 1)
 #
 # # Optionally, plot the filtered data
 plt.figure()
