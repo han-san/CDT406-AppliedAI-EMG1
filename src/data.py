@@ -25,6 +25,19 @@ class State(Enum):
     HOLD = (0.0, 0.0, 0.0, 1.0)
 
 
+def to_state(i: int) -> State:
+    if i == 0:
+        return State.REST
+    if i == 1:
+        return State.GRIP
+    if i == 2:
+        return State.HOLD
+    if i == 3:
+        return State.RELEASE
+    err = ValueError("Invalid State int representation passed as argument.")
+    raise err
+
+
 # FIXME: Maybe provide the ability to filter as a module in preprocessing?
 # Define filter parameters
 order = 4  # Filter order
@@ -125,19 +138,7 @@ def load_our_data_file(filepath: Path) -> Data:
     readings = pd.read_csv(filepath, index_col=0, names=["time", "voltage", "label"])
     voltages = readings["voltage"]
 
-    def tolabel(i: int) -> State:
-        if i == 0:
-            return State.REST
-        if i == 1:
-            return State.GRIP
-        if i == 2:
-            return State.HOLD
-        if i == 3:
-            return State.RELEASE
-        err = ValueError("bad state read from file")
-        raise err
-
-    labels = [tolabel(label) for label in readings["label"]]
+    labels = [to_state(label) for label in readings["label"]]
 
     return Data(voltages.to_numpy(), labels)
 
