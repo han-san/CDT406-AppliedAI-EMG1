@@ -61,10 +61,9 @@ class Model:
                 ],
             )
 
-            # "Configures the model for training"
-            # TODO(johan): Might want to change the arguments.
             self.model.compile(
-                loss=tf.keras.losses.MeanSquaredError(),
+                optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
+                loss=tf.keras.losses.CategoricalCrossentropy(),
                 metrics=["accuracy", tf.keras.metrics.F1Score(average="macro")],
             )
         else:

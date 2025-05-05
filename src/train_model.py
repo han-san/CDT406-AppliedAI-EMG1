@@ -38,7 +38,7 @@ if model_path.exists():
 
 model = Model(Model.Type.LSTM, timestep_window_size, channel_count)
 # FIXME: Figure out what batch_size we should have.
-model.train(model_input, model_desired_output, batch_size=None, epochs=5)
+model.train(model_input, model_desired_output, batch_size=64, epochs=1000)
 
 # output = model.execute(model_inputs[0])
 
