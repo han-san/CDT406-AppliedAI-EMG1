@@ -22,7 +22,7 @@ class ExperimentEventTimeline(ExperimentTimeline):
 	def do_event(self, timestamp: int):
 		while self.is_time(timestamp):
 			(ts, event) = self._timeline.popleft()
-			print("%s:" % timestamp)
+			# print("%s:" % timestamp)
 			event.execute()
 
 class ExperimentStateTimeline(ExperimentTimeline):
@@ -35,3 +35,9 @@ class ExperimentStateTimeline(ExperimentTimeline):
 			return state
 		else:
 			return old_state
+
+	def peek_current_state(self, timestamp: int):
+		if self.is_time(timestamp):
+			(ts, state) = self._timeline[0]
+			return state
+		return -1

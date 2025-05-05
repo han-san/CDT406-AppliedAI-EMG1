@@ -5,6 +5,7 @@ from dwfconstants import *
 import matplotlib.pyplot as plt
 import numpy
 import pandas as pd
+from pathlib import Path
 
 if sys.platform.startswith("win"):
     dwf = cdll.dwf
@@ -17,6 +18,7 @@ import exp_LED as led
 from experiment import Experiment
 import exp_instructions as inst
 import exp_states as states
+from exp_parser import parse_script
 
 #check library loading errors
 szerr = create_string_buffer(512)
@@ -47,67 +49,15 @@ green_pin = 10
 fLost = 0
 fCorrupted = 0
 
-script = [
-    inst.ExperimentInstructionsChangeState(0),
-    inst.ExperimentInstructionsWait(3.5), #3.5
-    inst.ExperimentInstructionsLEDOn(red_pin),
-    inst.ExperimentInstructionsWait(0.5), # 4
-    inst.ExperimentInstructionsLEDOff(red_pin),
-    inst.ExperimentInstructionsLEDOn(yellow_pin),
-    inst.ExperimentInstructionsWait(0.5), # 4.5
-    inst.ExperimentInstructionsLEDOff(yellow_pin),
-    inst.ExperimentInstructionsLEDOn(green_pin),
-    inst.ExperimentInstructionsWait(0.5), # 5
-    inst.ExperimentInstructionsLEDOff(green_pin),
-    inst.ExperimentInstructionsChangeState(1),
-    inst.ExperimentInstructionsWait(0.5), # 5.5
-    inst.ExperimentInstructionsChangeState(2),
-    inst.ExperimentInstructionsWait(2), # 7.5
-    inst.ExperimentInstructionsLEDOn(red_pin),
-    inst.ExperimentInstructionsWait(0.5), # 8
-    inst.ExperimentInstructionsLEDOff(red_pin),
-    inst.ExperimentInstructionsLEDOn(yellow_pin),
-    inst.ExperimentInstructionsWait(0.5), # 8.5
-    inst.ExperimentInstructionsLEDOff(yellow_pin),
-    inst.ExperimentInstructionsLEDOn(green_pin),
-    inst.ExperimentInstructionsWait(0.5), # 9
-    inst.ExperimentInstructionsLEDOff(green_pin),
-    inst.ExperimentInstructionsChangeState(3),
-    inst.ExperimentInstructionsWait(0.5), # 9.5
-    inst.ExperimentInstructionsChangeState(0),
-    inst.ExperimentInstructionsWait(8), # 17.5
-    inst.ExperimentInstructionsLEDOn(red_pin),
-    inst.ExperimentInstructionsWait(0.5), # 18
-    inst.ExperimentInstructionsLEDOff(red_pin),
-    inst.ExperimentInstructionsLEDOn(yellow_pin),
-    inst.ExperimentInstructionsWait(0.5), # 18.5
-    inst.ExperimentInstructionsLEDOff(yellow_pin),
-    inst.ExperimentInstructionsLEDOn(green_pin),
-    inst.ExperimentInstructionsWait(0.5), # 19
-    inst.ExperimentInstructionsLEDOff(green_pin),
-    inst.ExperimentInstructionsChangeState(1),
-    inst.ExperimentInstructionsWait(0.5), # 19.5
-    inst.ExperimentInstructionsChangeState(2),
-    inst.ExperimentInstructionsWait(8), # 27.5
-    inst.ExperimentInstructionsLEDOn(red_pin),
-    inst.ExperimentInstructionsWait(0.5), # 28
-    inst.ExperimentInstructionsLEDOff(red_pin),
-    inst.ExperimentInstructionsLEDOn(yellow_pin),
-    inst.ExperimentInstructionsWait(0.5), # 28.5
-    inst.ExperimentInstructionsLEDOff(yellow_pin),
-    inst.ExperimentInstructionsLEDOn(green_pin),
-    inst.ExperimentInstructionsWait(0.5), # 29
-    inst.ExperimentInstructionsLEDOff(green_pin),
-    inst.ExperimentInstructionsChangeState(3),
-    inst.ExperimentInstructionsWait(0.5), # 29.5
-    inst.ExperimentInstructionsChangeState(0),
-    inst.ExperimentInstructionsWait(4.5), # 34
-]
-
-exp = Experiment(int(hzAcq.value), red_pin, yellow_pin, green_pin, hdwf)
-exp.read_instructions(script)
-nSamples = int(exp.experiment_duration())
-rgdSamples = (c_double*nSamples)()
+path = Path(sys.argv[1])
+script = []
+comment = ''
+if path.is_file():
+    code = path.read_text()
+    (script, comment) = parse_script(code)
+else:
+    print("No input file")
+    exit(-1)
 
 #print DWF version
 version = create_string_buffer(16)
@@ -116,7 +66,6 @@ print("DWF Version: "+str(version.value))
 
 # enumerate connected devices
 dwf.FDwfEnum(devidDiscovery2, byref(cDevice))
-# dwf.FDwfEnum(c_int(0), byref(cDevice))
 
 #open Analog Studio
 for idevice in range(0, cDevice.value):
@@ -147,6 +96,11 @@ dwf.FDwfDigitalOutReset(hdwf)
 # Turn off auto-configuration
 dwf.FDwfDeviceAutoConfigureSet(hdwf, c_int(0))
 
+exp = Experiment(int(hzAcq.value), red_pin, yellow_pin, green_pin, hdwf)
+exp.read_instructions(script)
+nSamples = int(exp.experiment_duration())
+rgdSamples = (c_double*nSamples)()
+
 #Reading clock frequency
 #c_double(100 000 000.0)
 hzSys = c_double()
@@ -161,6 +115,7 @@ dwf.FDwfAnalogInRecordLengthSet(hdwf, c_double(nSamples/hzAcq.value)) # -1 infin
 dwf.FDwfAnalogInConfigure(hdwf, c_int(1), c_int(0))
 
 #wait at least 2 seconds for the offset to stabilize
+print(comment)
 time.sleep(3)
 
 #set up LEDs
@@ -172,7 +127,7 @@ print("Starting oscilloscope")
 dwf.FDwfAnalogInConfigure(hdwf, c_int(0), c_int(1))
 
 cSamples = 0
-state = states.ExperimentStates.REST
+state = exp.init_state()
 exp.actual_experiment_state(state, cSamples)
 
 while cSamples < nSamples:
@@ -218,7 +173,7 @@ if fCorrupted:
     print("Samples could be corrupted! Reduce frequency")
 
 start = 0
-state = states.ExperimentStates.REST
+state = exp.init_state()
 samples = []
 f = open(time.strftime("%d%m-%H%M%S", time.localtime())+"record.csv", "w")
 for i in range(len(rgdSamples)):
@@ -229,8 +184,7 @@ for i in range(len(rgdSamples)):
     start += 1/hzAcq.value
 f.close()
 
-df = pd.DataFrame(samples, columns= ['Time', 'Voltage', 'State'])
+df = pd.DataFrame(samples, columns= ['Time (s)', 'Voltage (V)', 'State'])
 df.plot(x = 0, title = f.name)
 
-# plt.plot(numpy.fromiter(rgdSamples, dtype = float)[0::10])
 plt.show()

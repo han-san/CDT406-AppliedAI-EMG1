@@ -1,0 +1,36 @@
+Description:
+'Rest for 5 seconds
+On green LED off - grip in 0.5 seconds
+Hold for 4 seconds
+On green LED off - release in 0.5 seconds
+Rest for 5 seconds'
+
+Protocol:
+	rest:
+		wait 3.5
+		led_on R
+		wait 0.5
+		led_off R
+		led_on Y
+		wait 0.5
+		led_off Y
+		led_on G
+		wait 0.5
+		led_off G
+	grip:
+		wait 0.5
+	hold:
+		wait 2
+		led_on R
+		wait 0.5
+		led_off R
+		led_on Y
+		wait 0.5
+		led_off Y
+		led_on G
+		wait 0.5
+		led_off G
+	release:
+		wait 0.5
+	rest:
+		wait 4.5

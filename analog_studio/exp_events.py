@@ -2,7 +2,7 @@ from exp_LED import turnon_LED, turnoff_LED
 
 class ExperimentEvent:
 	def execute(self):
-		pass
+		raise NotImplementedError("Empty event has no handler")
 
 class ExperimentEventLEDOn(ExperimentEvent):
 	def __init__(self, pin: int, hdwf):
@@ -11,7 +11,7 @@ class ExperimentEventLEDOn(ExperimentEvent):
 
 	def execute(self):
 		turnon_LED(self._hdwf, self._pin)
-		print("%s ON" % self._pin)
+		# print("%s ON" % self._pin)
 
 class ExperimentEventLEDOff(ExperimentEvent):
 	def __init__(self, pin: int, hdwf):
@@ -20,4 +20,4 @@ class ExperimentEventLEDOff(ExperimentEvent):
 
 	def execute(self):
 		turnoff_LED(self._hdwf, self._pin)
-		print("%s OFF" % self._pin)
+		# print("%s OFF" % self._pin)
