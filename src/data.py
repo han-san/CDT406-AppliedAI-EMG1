@@ -5,6 +5,8 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd  # type: ignore[import-untyped]
 
+from preprocessing.FilterFunction import filter_function
+
 # The amount of measurements included in each reading.
 channel_count = 1
 
@@ -38,21 +40,6 @@ def to_state(i: int) -> State:
     raise err
 
 
-# FIXME: Maybe provide the ability to filter as a module in preprocessing?
-# Define filter parameters
-order = 4  # Filter order
-cutoff = 100  # Cutoff frequency in Hz
-fs = 1000  # Sampling frequency in Hz
-
-# Design a low-pass Butterworth filter
-# b, a = sp.signal.butter(order, cutoff / (fs / 2), btype="low", analog=False)
-
-
-# def filter_window(data: list[float]) -> npt.NDArray[np.float32]:
-#     """Filter the data."""
-#     return sp.signal.lfilter(b, a, np.array(data, dtype=np.float32))
-
-
 class Data:
     """Represents a list of data measurements."""
 
@@ -65,18 +52,7 @@ class Data:
             labels: list[State],
         ) -> None:
             """Construct a window of data."""
-            self.window = np.array(window)
-
-            mean = np.mean(window)
-            std = np.std(window)
-            # mean subtraction
-            window = window - mean
-            window = np.abs(window)
-            window_normalized = (window - mean) / std
-            # filtered_window = sp.signal.filtfilt(b, a, window_normalized)
-
-            self.window = window_normalized
-            # self.window = filtered_window
+            self.window = filter_function(window, 1)
             self.labels = labels
 
         def __len__(self) -> int:
