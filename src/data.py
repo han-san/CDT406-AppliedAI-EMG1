@@ -89,14 +89,6 @@ class Data:
     def __init__(self, data: list[float], labels: list[State]) -> None:
         """Construct a data object representing a list of float measurements."""
         self._data = np.array(data, dtype=np.float32)
-        # self._data = np.array(data, dtype=np.float32)
-        # plt.plot(data, color="green", label="Original Signal")
-        # plt.plot(self._data, color="red", label="Filtered Signal")
-        # plt.ylabel("Amplitude")
-        # plt.xlabel("Sample Number")
-        # plt.show()
-        # exit()
-
         self._labels = labels
 
     def window(self, begin: int, end: int) -> Window:
@@ -126,9 +118,6 @@ def load_myoflex_data_file(filepath: Path) -> Data:
             err = ValueError("The filename doesn't include a valid gesture classifier.")
             raise err
 
-        # FIXME: REMOVE TRIM WHEN HANDLING OWN MEASUREMENTS
-        #        We remove 3 seconds from the start of measurements
-        #        since they are in some kind of rest state
         measurements = [float(s) for s in f.read().split(",")[3000:]]
         return Data(measurements, [label] * len(measurements))
 
