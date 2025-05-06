@@ -19,10 +19,10 @@ class DataType(Enum):
 class State(Enum):
     """The output representing a state."""
 
-    GRIP = (1.0, 0.0, 0.0, 0.0)
-    RELEASE = (0.0, 1.0, 0.0, 0.0)
-    REST = (0.0, 0.0, 1.0, 0.0)
-    HOLD = (0.0, 0.0, 0.0, 1.0)
+    REST = (1.0, 0.0, 0.0, 0.0)
+    GRIP = (0.0, 1.0, 0.0, 0.0)
+    HOLD = (0.0, 0.0, 1.0, 0.0)
+    RELEASE = (0.0, 0.0, 0.0, 1.0)
 
 
 def to_state(i: int) -> State:
