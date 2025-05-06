@@ -10,6 +10,8 @@ tokens = (
     "WAIT",
     "LED_ON",
     "LED_OFF",
+    "AUDIO_ON",
+    "AUDIO_OFF",
     "LED",
     "DESCRIPTION",
     "PROTOCOL",
@@ -17,6 +19,9 @@ tokens = (
     "GRIP",
     "HOLD",
     "RELEASE",
+    "FOR_BEGIN",
+    "FOR_END",
+    "FOR_LOOP"
 )
 
 t_ignore = " \t"
@@ -24,6 +29,9 @@ t_ignore = " \t"
 t_TEXT = r"\'[^\']*\'"
 t_DESCRIPTION = r"Description:\s*\n"
 t_PROTOCOL = r"Protocol:\s*\n"
+t_FOR_LOOP = r"for"
+t_FOR_BEGIN = r"begin"
+t_FOR_END = r"end"
 
 
 def t_NEWLINE(t):
@@ -48,6 +56,15 @@ def t_LED_OFF(t):
     t.type = "LED_OFF"
     return t
 
+def t_AUDIO_ON(t):
+    r"audio_on"
+    t.type = "AUDIO_ON"
+    return t
+
+def t_AUDIO_OFF(t):
+    r"audio_off"
+    t.type = "AUDIO_OFF"
+    return t
 
 def t_NUMBER(t):
     r"[0-9]+(?:\.[0-9]+)?"
@@ -89,61 +106,76 @@ def t_error(t):
 	print("Error parsing token " + str(t))
 	exit(-1)
 
-script = []
-comment = ''
-
 def p_program(p):
     """program : description timeline"""
-    pass
+    p[0] = (p[2], p[1])
 
 
 def p_description(p):
     """description : DESCRIPTION TEXT"""
-    global comment
-    comment = p[2]
+    p[0] = p[2]
 
 def p_timeline(p):
     """timeline : PROTOCOL protocol"""
-    pass
+    p[0] = p[2]
 
 
 def p_protocol(p):
-    """protocol : state operands
-    | state operands protocol"""
-    pass
+    """protocol : state operands"""
+    p[0] = [p[1]] + p[2]
 
+def p_protocol_multiple(p):
+    """protocol : state operands protocol"""
+    p[0] = [p[1]] + p[2] + p[3]
 
 def p_state(p):
     """state : REST
     | GRIP
     | HOLD
     | RELEASE"""
-    script.append(inst.ExperimentInstructionsChangeState(p[1]))
+    p[0] = inst.ExperimentInstructionsChangeState(p[1])
 
 
-def p_operands(p):
-    """operands : operand
-    | operand operands"""
-    pass
+def p_operands_single(p):
+    """operands : operand"""
+    p[0] = p[1]
 
+def p_operands_multiple(p):
+    """operands : operand operands"""
+    p[0] = p[1] + p[2]
 
 def p_operand(p):
     """operand : wait
-    | control"""
-    pass
-
+    | control
+    | for_loop"""
+    p[0] = p[1]
 
 def p_wait(p):
     """wait : WAIT NUMBER"""
-    script.append(inst.ExperimentInstructionsWait(p[2]))
+    p[0] = [inst.ExperimentInstructionsWait(p[2])]
 
-def p_control_on(p):
+def p_control_led_on(p):
     """control : LED_ON LED"""
-    script.append(inst.ExperimentInstructionsLEDOn(p[2]))
+    p[0] = [inst.ExperimentInstructionsLEDOn(p[2])]
 
-def p_control_off(p):
+def p_control_led_off(p):
     """control : LED_OFF LED"""
-    script.append(inst.ExperimentInstructionsLEDOff(p[2]))
+    p[0] = [inst.ExperimentInstructionsLEDOff(p[2])]
+
+def p_control_audio_on(p):
+    """control : AUDIO_ON"""
+    p[0] = [inst.ExperimentInstructionsAudioOn(0)]
+
+def p_control_audio_off(p):
+    """control : AUDIO_OFF"""
+    p[0] = [inst.ExperimentInstructionsAudioOff(0)]
+
+def p_for_loop_prot(p):
+    """for_loop : FOR_LOOP NUMBER FOR_BEGIN protocol FOR_END"""
+    operands = []
+    for i in range(int(p[2])):
+        operands += p[4]
+    p[0] = operands
 
 def p_error(p):
     print("Syntax error: ", p)
@@ -153,7 +185,4 @@ lexer = lex.lex()
 parser = yacc.yacc()
 
 def parse_script(dsl_code):
-	global script
-	script.clear()
-	parser.parse(dsl_code)
-	return (script,comment)
+	return parser.parse(dsl_code)

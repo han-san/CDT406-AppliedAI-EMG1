@@ -77,3 +77,21 @@ class ExperimentInstructionsChangeState(ExperimentInstructions):
     def execute(self, context: ExperimentInstructionsContext):
         s_tl = context.state_timeline
         s_tl.add_to_timeline(context.time, states.ExperimentStates(int(self._arg)))
+
+
+class ExperimentInstructionsAudioOn(ExperimentInstructions):
+    def execute(self, context: ExperimentInstructionsContext):
+        e_tl = context.event_timeline
+        e_tl.add_to_timeline(
+            context.time,
+            events.ExperimentEventAudioOn(int(self._arg), context.hdwf),
+        )
+
+
+class ExperimentInstructionsAudioOff(ExperimentInstructions):
+    def execute(self, context: ExperimentInstructionsContext):
+        e_tl = context.event_timeline
+        e_tl.add_to_timeline(
+            context.time,
+            events.ExperimentEventAudioOff(int(self._arg), context.hdwf),
+        )

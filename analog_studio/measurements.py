@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy
 import pandas as pd
 from pathlib import Path
+import signal
 
 if sys.platform.startswith("win"):
     dwf = cdll.dwf
@@ -15,6 +16,7 @@ else:
     dwf = cdll.LoadLibrary("libdwf.so")
 
 import exp_LED as led
+import exp_audio as audio
 from experiment import Experiment
 import exp_instructions as inst
 import exp_states as states
@@ -46,6 +48,7 @@ serialnum = create_string_buffer(16)
 red_pin = 9
 yellow_pin = 8
 green_pin = 10
+channel = 0
 fLost = 0
 fCorrupted = 0
 
@@ -92,6 +95,12 @@ if hdwf.value == 0:
     print("No device found")
     sys.exit(0)
 
+def sigint_handler(signum, frame):
+    dwf.FDwfDigitalOutReset(hdwf)
+    dwf.FDwfDeviceCloseAll()
+    sys.exit(-1)
+signal.signal(signal.SIGINT, sigint_handler)
+
 dwf.FDwfDigitalOutReset(hdwf)
 # Turn off auto-configuration
 dwf.FDwfDeviceAutoConfigureSet(hdwf, c_int(0))
@@ -122,6 +131,9 @@ time.sleep(3)
 led.configure_LED(hdwf, red_pin, int(hzAcq.value))
 led.configure_LED(hdwf, yellow_pin, int(hzAcq.value))
 led.configure_LED(hdwf, green_pin, int(hzAcq.value))
+
+#set up audio
+audio.configure_audio(hdwf, channel)
 
 print("Starting oscilloscope")
 dwf.FDwfAnalogInConfigure(hdwf, c_int(0), c_int(1))
