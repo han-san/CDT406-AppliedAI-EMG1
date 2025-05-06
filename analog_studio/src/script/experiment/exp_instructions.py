@@ -1,8 +1,8 @@
 from enum import Enum
 
-import exp_timeline as timeline
-import exp_events as events
-import exp_states as states
+import experiment.exp_timeline as timeline
+import experiment.exp_events as events
+import experiment.exp_states as states
 
 
 class ExperimentLEDColor(Enum):

@@ -1,5 +1,5 @@
 from ctypes import c_int
-from dwfconstants import *
+from script.dwfconstants import *
 import sys
 
 if sys.platform.startswith("win"):

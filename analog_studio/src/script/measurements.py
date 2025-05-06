@@ -2,8 +2,6 @@ from ctypes import *
 import sys
 import time
 from dwfconstants import *
-import matplotlib.pyplot as plt
-import numpy
 import pandas as pd
 from pathlib import Path
 import signal
@@ -15,13 +13,12 @@ elif sys.platform.startswith("darwin"):
 else:
     dwf = cdll.LoadLibrary("libdwf.so")
 
-import exp_LED as led
-import exp_audio as audio
-from experiment import Experiment
-import exp_instructions as inst
-import exp_states as states
-from exp_parser import parse_script
-
+import experiment.exp_LED as led
+import experiment.exp_audio as audio
+from experiment.experiment import Experiment
+from experiment.exp_parser import parse_script
+import experiment.exp_plot as exp_plot
+ 
 #check library loading errors
 szerr = create_string_buffer(512)
 dwf.FDwfGetLastErrorMsg(szerr)
@@ -197,6 +194,4 @@ for i in range(len(rgdSamples)):
 f.close()
 
 df = pd.DataFrame(samples, columns= ['Time (s)', 'Voltage (V)', 'State'])
-df.plot(x = 0, title = f.name)
-
-plt.show()
+exp_plot.plot_measurements(df)

@@ -1,6 +1,6 @@
 from collections import deque
-import exp_events as events
-import exp_states as states
+import experiment.exp_events as events
+import experiment.exp_states as states
 
 class ExperimentTimeline:
 	def __init__(self):

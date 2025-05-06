@@ -1,8 +1,8 @@
 import ply.lex as lex
 import ply.yacc as yacc
 
-import exp_instructions as inst
-import exp_states
+import experiment.exp_instructions as inst
+import experiment.exp_states as exp_states
 
 tokens = (
     "NUMBER",
