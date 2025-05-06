@@ -1,0 +1,74 @@
+Description:
+'Consecutive gripping and releasing, each for 0.5 seconds'
+
+Protocol:
+	rest:
+		wait 3
+		led_on G
+		wait 0.25
+		led_off G
+		led_on Y
+		wait 0.25
+		led_off Y
+		led_on R
+	grip:
+		wait 0.25
+		led_off R
+	release:
+		wait 0.25
+		led_on R
+	grip:
+		wait 0.25
+		led_off R
+	release:
+		wait 0.25
+		led_on R
+	grip:
+		wait 0.25
+		led_off R
+	release:
+		wait 0.25
+		led_on R
+	grip:
+		wait 0.25
+		led_off R
+	release:
+		wait 0.25
+		led_on R
+	grip:
+		wait 0.25
+		led_off R
+	release:
+		wait 0.25
+		led_on R
+	grip:
+		wait 0.25
+		led_off R
+	release:
+		wait 0.25
+		led_on R
+	grip:
+		wait 0.25
+		led_off R
+	release:
+		wait 0.25
+		led_on R
+	grip:
+		wait 0.25
+		led_off R
+	release:
+		wait 0.25
+		led_on R
+	grip:
+		wait 0.25
+		led_off R
+	release:
+		wait 0.25
+		led_on R
+	grip:
+		wait 0.25
+		led_off R
+	release:
+		wait 0.25
+	rest:
+		wait 2

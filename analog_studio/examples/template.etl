@@ -1,0 +1,16 @@
+Description:
+'The descritpion is mandatory, notice the single quote signs at the begining and end
+Available instruction:
+wait <sec> - wait fot <sec> seconds, may be floating point
+led_on [R,Y,G] - turn on one of leds
+led_off [R,Y,G] - turn off one of the leds
+Availbale states:
+rest, grip, hold, release'
+
+Protocol:
+	state 1:
+		inst 1
+		inst 2
+		...
+	state 2:
+		...
