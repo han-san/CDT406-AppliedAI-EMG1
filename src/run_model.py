@@ -2,7 +2,9 @@ import time
 from pathlib import Path
 from typing import Any
 
+import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 
 from data import Input, Output, State
 
@@ -23,15 +25,11 @@ def load_and_run_tflite(
 
     input_shape = input_details[0]["shape"]
 
-    correct_grip = 0
-    correct_hold = 0
-    correct_rest = 0
-    correct_release = 0
-    incorrect_grip = 0
-    incorrect_hold = 0
-    incorrect_rest = 0
-    incorrect_release = 0
+    correct_classifications = [0, 0, 0, 0]
+    incorrect_classifications = [0, 0, 0, 0]
+    total_classifications = [0, 0, 0, 0]
 
+    predictions = []
     for i, (in_window, out) in enumerate(
         zip(model_input.input, expected_output.output),
     ):
@@ -45,41 +43,55 @@ def load_and_run_tflite(
         # The function `get_tensor()` returns a copy of the tensor data.
         # Use `tensor()` in order to get a pointer to the tensor.
         output_data = interpreter.get_tensor(output_details[0]["index"])
+        predictions.append(output_data[0])
 
         dt = time.perf_counter() - start
 
-        if np.argmax(output_data[0]) == np.argmax(out):
-            if np.argmax(out) == np.argmax(State.GRIP.value):
-                correct_grip += 1
-            if np.argmax(out) == np.argmax(State.RELEASE.value):
-                correct_release += 1
-            if np.argmax(out) == np.argmax(State.REST.value):
-                correct_rest += 1
-            if np.argmax(out) == np.argmax(State.HOLD.value):
-                correct_hold += 1
+        end_color = "\033[0m"
+        wrong_col = "\033[1;31m"
+        right_col = "\033[1;32m"
+
+        target_col = "\033[1;34m"
+
+        output_index = np.argmax(output_data[0])
+        target_index = np.argmax(out)
+        output_colors = ["", "", "", ""]
+        target_colors = ["", "", "", ""]
+
+        if output_index == target_index:
+            correct_classifications[output_index] += 1
+            output_colors[output_index] = right_col
         else:
-            if np.argmax(out) == np.argmax(State.GRIP.value):
-                incorrect_grip += 1
-            if np.argmax(out) == np.argmax(State.RELEASE.value):
-                incorrect_release += 1
-            if np.argmax(out) == np.argmax(State.REST.value):
-                incorrect_rest += 1
-            if np.argmax(out) == np.argmax(State.HOLD.value):
-                incorrect_hold += 1
+            incorrect_classifications[output_index] += 1
+            output_colors[output_index] = wrong_col
+            target_colors[target_index] = target_col
 
-        total = i + 1
+        total_classifications[target_index] += 1
 
-        correct = correct_grip + correct_hold + correct_release + correct_rest
-        total_rest = correct_rest + incorrect_rest
-        total_release = correct_release + incorrect_release
-        total_grip = correct_grip + incorrect_grip
-        total_hold = correct_hold + incorrect_hold
+        correct_count = sum(correct_classifications)
         print(
-            f"\rdt: {dt}s, iteration: {total}, accuracy: Total: {correct / total * 100}%, Rest: {correct_rest / (total_rest if total_rest else 1) * 100}, Grip: {correct_grip / (total_grip if total_grip else 1) * 100}, Hold: {correct_hold / (total_hold if total_hold else 1) * 100}, Release: {correct_release / (total_release if total_release else 1) * 100}     ",
+            f"{i} - {correct_count / (i + 1) * 100:.2f}% {dt * 1000:.3f}ms out:[",
             end="",
         )
+        for out_col, target_col, data in zip(
+            output_colors, target_colors, output_data[0]
+        ):
+            print(f"{out_col}{target_col}{data * 100:.2f}%{end_color}, ", end="")
+        print("\b\b]")
 
     print()
     print(
-        f"grip: {correct_grip}/{total_grip}, rest: {correct_rest}/{total_rest}, release: {correct_release}/{total_release}, hold: {correct_hold}/{total_hold}"
+        f"rest: {correct_classifications[0]}({incorrect_classifications[0]})/{total_classifications[0]}, grip: {correct_classifications[1]}({incorrect_classifications[1]})/{total_classifications[1]}, hold: {correct_classifications[2]}({incorrect_classifications[2]})/{total_classifications[2]}, release: {correct_classifications[3]}({incorrect_classifications[3]})/{total_classifications[3]}"
     )
+
+    a = [np.argmax(v) for v in expected_output.output]
+    b = [np.argmax(v) for v in predictions]
+
+    cm = confusion_matrix(a, b)
+    disp = ConfusionMatrixDisplay(
+        confusion_matrix=cm,
+        display_labels=["rest", "grip", "hold", "release"],
+    )
+    disp.plot()
+    plt.title("Confusion matrix")
+    plt.show()
