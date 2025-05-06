@@ -86,7 +86,6 @@ class Model:
         epochs: int,
     ) -> None:
         """Train the model using the provided input for some number of epochs."""
-        # TODO(johan): Figure out what we should set the batch size to.
         # TODO(johan): We want to split input into validation/testing sets.
         print("Starting training!")
         history = self.model.fit(
