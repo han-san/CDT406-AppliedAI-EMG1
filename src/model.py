@@ -64,7 +64,14 @@ class Model:
             self.model.compile(
                 optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
                 loss=tf.keras.losses.CategoricalCrossentropy(),
-                metrics=["accuracy", tf.keras.metrics.F1Score(average="macro")],
+                metrics=[
+                    "accuracy",
+                    tf.keras.metrics.F1Score(average="macro"),
+                    tf.keras.metrics.TruePositives(),
+                    tf.keras.metrics.TrueNegatives(),
+                    tf.keras.metrics.FalsePositives(),
+                    tf.keras.metrics.FalseNegatives(),
+                ],
             )
         else:
             msg = f"Trying to construct model with invalid enum value {model_type}"
