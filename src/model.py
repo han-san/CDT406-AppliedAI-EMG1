@@ -14,8 +14,13 @@ import tensorflow as tf  # type: ignore[import-untyped]
 if TYPE_CHECKING:
     from data import Input, Output
 
+# FIXME: Unify the sample rate variables
+sample_rate = 5000
+sample_rate_to_ms_ratio = sample_rate // 1000
+window_size_in_ms = 200
+
 # The amount of measurement readings we use as input.
-timestep_window_size = 200
+timestep_window_size = window_size_in_ms * sample_rate_to_ms_ratio
 
 
 class Model:
@@ -56,11 +61,17 @@ class Model:
                 ],
             )
 
-            # "Configures the model for training"
-            # TODO(johan): Might want to change the arguments.
             self.model.compile(
-                loss=tf.keras.losses.MeanSquaredError(),
-                metrics=["accuracy"],
+                optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
+                loss=tf.keras.losses.CategoricalCrossentropy(),
+                metrics=[
+                    "accuracy",
+                    tf.keras.metrics.F1Score(average="macro"),
+                    tf.keras.metrics.TruePositives(),
+                    tf.keras.metrics.TrueNegatives(),
+                    tf.keras.metrics.FalsePositives(),
+                    tf.keras.metrics.FalseNegatives(),
+                ],
             )
         else:
             msg = f"Trying to construct model with invalid enum value {model_type}"
@@ -89,6 +100,7 @@ class Model:
         print(history.history)
         plt.plot(history.history["accuracy"], label="Accuracy")
         plt.plot(history.history["loss"], label="Loss")
+        plt.plot(history.history["f1_score"], label="f1")
         plt.legend()
         plt.title("Model Loss and Accuracy")
         plt.ylabel("Loss/Accuracy")

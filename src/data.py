@@ -19,10 +19,23 @@ class DataType(Enum):
 class State(Enum):
     """The output representing a state."""
 
-    GRIP = (1.0, 0.0, 0.0, 0.0)
-    RELEASE = (0.0, 1.0, 0.0, 0.0)
-    REST = (0.0, 0.0, 1.0, 0.0)
-    HOLD = (0.0, 0.0, 0.0, 1.0)
+    REST = (1.0, 0.0, 0.0, 0.0)
+    GRIP = (0.0, 1.0, 0.0, 0.0)
+    HOLD = (0.0, 0.0, 1.0, 0.0)
+    RELEASE = (0.0, 0.0, 0.0, 1.0)
+
+
+def to_state(i: int) -> State:
+    if i == 0:
+        return State.REST
+    if i == 1:
+        return State.GRIP
+    if i == 2:
+        return State.HOLD
+    if i == 3:
+        return State.RELEASE
+    err = ValueError("Invalid State int representation passed as argument.")
+    raise err
 
 
 # FIXME: Maybe provide the ability to filter as a module in preprocessing?
@@ -122,72 +135,10 @@ def load_myoflex_data_file(filepath: Path) -> Data:
 
 def load_our_data_file(filepath: Path) -> Data:
     """Read the data from our data file."""
-    readings = pd.read_csv(filepath, header=4)
-    # FIXME: We make the measurements have a sample rate of 1000hz.
-    #        We also reverse the measurements, since they start at 20s and decrease.
-    stepped = readings.iloc[::-5]
-    voltages = stepped["C2 (V)"]
-    # FIXME: Here we do labeling on specific files, later on the files should already be labeled.
-    rest_stop = 0.0
-    grip_stop = 0.0
-    hold_stop = 0.0
-    release_stop = 0.0
-    if filepath.name == "testP5.csv":
-        rest_stop = 9
-        grip_stop = 12
-        hold_stop = 14.3
-        release_stop = 16.3
-    elif filepath.name == "testJ4.csv":
-        rest_stop = 7
-        grip_stop = 8.8
-        hold_stop = 11.8
-        release_stop = 14
-    elif filepath.name == "testJ.csv":
-        rest_stop = 7.3
-        grip_stop = 9.7
-        hold_stop = 13
-        release_stop = 14.3
-    elif filepath.name == "testP4.csv":
-        rest_stop = 9.3
-        grip_stop = 11
-        hold_stop = 14.5
-        release_stop = 16.25
-    elif filepath.name == "testJ3.csv":
-        rest_stop = 6.4
-        grip_stop = 8.6
-        hold_stop = 12.5
-        release_stop = 14
-    elif filepath.name == "testJ2.csv":
-        rest_stop = 7
-        grip_stop = 8.7
-        hold_stop = 12.4
-        release_stop = 14
-    elif filepath.name == "testP2.csv":
-        rest_stop = 7.2
-        grip_stop = 9
-        hold_stop = 12.3
-        release_stop = 14.7
-    elif filepath.name == "testP3.csv":
-        rest_stop = 9.2
-        grip_stop = 11
-        hold_stop = 14.4
-        release_stop = 16
-    else:
-        err = ValueError(f"Unknown file [{filepath.name}] passed as measurement.")
-        raise err
-    # Turn them into ms.
-    rest_stop *= 1000
-    grip_stop *= 1000
-    hold_stop *= 1000
-    release_stop *= 1000
+    readings = pd.read_csv(filepath, index_col=0, names=["time", "voltage", "label"])
+    voltages = readings["voltage"]
 
-    rests = [State.REST] * int(rest_stop)
-    grips = [State.GRIP] * int(grip_stop - rest_stop)
-    holds = [State.HOLD] * int(hold_stop - grip_stop)
-    releases = [State.RELEASE] * int(release_stop - hold_stop)
-    other_rests = [State.REST] * int(len(voltages) - release_stop)
-    labels = rests + grips + holds + releases + other_rests
-    print(len(labels))
+    labels = [to_state(label) for label in readings["label"]]
 
     return Data(voltages.to_numpy(), labels)
 
@@ -316,22 +267,27 @@ def get_io_from_myoflex(data_dir: Path) -> tuple[Input, Output]:
 
 
 def get_io_from_our_data(data_dir: Path) -> tuple[Input, Output]:
-    data_paths = list(data_dir.iterdir())
+    data_paths = list(data_dir.rglob("*.csv"))
     print(f"Loading {len(data_paths)} measurement files.")
 
     data_measurements = load_data_files(data_paths, DataType.OURS)
 
+    sample_rate = 5000
+    ms = 1000
+    sample_ratio = sample_rate // ms
+
     segmented_measurements = [
-        create_windows(data, window_size=200, overlap=50) for data in data_measurements
+        create_windows(data, window_size=200 * sample_ratio, overlap=50 * sample_ratio)
+        for data in data_measurements
     ]
 
     # Flatten windows so we can train on them in one go.
     model_windows = [item for row in segmented_measurements for item in row]
     model_input = Input(model_windows)
 
-    # Since we haven't yet decided exactly how to handle the labeling, we use the label of
-    # the first measurement in the window as the desired label.
-    window_labels = [window.labels[0] for window in model_windows]
+    # FIXME: Since we haven't yet decided exactly how to handle the labeling, we use the
+    # label of the last measurement in the window as the desired label.
+    window_labels = [window.labels[-1] for window in model_windows]
     model_desired_output = Output(window_labels)
     return model_input, model_desired_output
 
@@ -342,8 +298,9 @@ def get_input_and_output_from_data_files(
 ) -> tuple[Input, Output]:
     if data_type == DataType.MYOFLEX:
         return get_io_from_myoflex(data_dir)
-    elif data_type == DataType.OURS:
+
+    if data_type == DataType.OURS:
         return get_io_from_our_data(data_dir)
-    else:
-        err = ValueError("DataType variable contains invalid enum type.")
-        raise err
+
+    err = ValueError("DataType variable contains invalid enum type.")
+    raise err
