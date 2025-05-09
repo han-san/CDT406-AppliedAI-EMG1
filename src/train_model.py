@@ -18,8 +18,12 @@ from model import (
 )
 from run_model import load_and_run_tflite
 
-model_path = Path("../model/model.tflite")
 
+if len(sys.argv) != 3:
+    print("Usage: train_model.py [dataset_dir] [execution_name_tag]")
+    sys.exit(1)
+
+model_path = Path(f"../model/model-{sys.argv[2]}.tflite")
 
 data_dir = Path(sys.argv[1])
 assert data_dir.is_dir()
