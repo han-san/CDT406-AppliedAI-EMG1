@@ -88,11 +88,23 @@ class Model:
         """Train the model using the provided input for some number of epochs."""
         # TODO(johan): We want to split input into validation/testing sets.
         print("Starting training!")
+
+        log_dir = (
+            "../logs/fit/"
+            + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+            + f"-{sys.argv[2]}"
+        )
+        tensorboard_callback = tf.keras.callbacks.TensorBoard(
+            log_dir=log_dir,
+            histogram_freq=1,
+        )
+
         history = self.model.fit(
             model_input.input,
             desired_output.output,
             batch_size=batch_size,
             epochs=epochs,
+            callbacks=[tensorboard_callback],
             verbose=2,
         )
         print("Finished training!")
