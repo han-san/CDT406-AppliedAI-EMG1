@@ -1,12 +1,12 @@
 Description:
 'Rest for 5 seconds
-On green LED off - grip in 0.5 seconds
+On green LED off (audio on) - grip in 0.5 seconds
 Hold for 4 seconds
-On green LED off - release in 0.5 seconds
+On green LED off (audio off) - release in 0.5 seconds
 Rest for 10 seconds
-On green LED off - grip in 0.5 seconds
+On green LED off (audio on) - grip in 0.5 seconds
 Hold for 10 seconds
-On green LED off - release in 0.5 seconds
+On green LED off (audio off) - release in 0.5 seconds
 Rest for 5 seconds'
 
 Protocol:
@@ -21,6 +21,7 @@ Protocol:
 		led_on G
 		wait 0.5
 		led_off G
+		audio_on
 
 	grip:
 		wait 0.5
@@ -36,6 +37,7 @@ Protocol:
 		led_on G
 		wait 0.5
 		led_off G
+		audio_off
 
 	release:
 		wait 0.5
@@ -51,6 +53,7 @@ Protocol:
 		led_on G
 		wait 0.5
 		led_off G
+		audio_on
 
 	grip:
 		wait 0.5
@@ -66,6 +69,7 @@ Protocol:
 		led_on G
 		wait 0.5
 		led_off G
+		audio_off
 
 	release:
 		wait 0.5

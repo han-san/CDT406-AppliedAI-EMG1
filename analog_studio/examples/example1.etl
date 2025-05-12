@@ -17,8 +17,10 @@ Protocol:
 		led_on G
 		wait 0.5
 		led_off G
+		audio_on
 	grip:
 		wait 0.5
+		audio_off
 	hold:
 		wait 2
 		led_on R
@@ -30,7 +32,9 @@ Protocol:
 		led_on G
 		wait 0.5
 		led_off G
+		audio_on
 	release:
 		wait 0.5
+		audio_off
 	rest:
 		wait 4.5

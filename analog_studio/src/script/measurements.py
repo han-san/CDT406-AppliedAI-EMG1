@@ -92,6 +92,26 @@ if hdwf.value == 0:
     print("No device found")
     sys.exit(0)
 
+subject = -1
+cycle = -1
+while True:
+    print("Enter subject no")
+    line = input()
+    if line.isnumeric():
+        subject = int(line)
+        break
+    else:
+        print("Try again")
+
+while True:
+    print("Enter cycle no")
+    line = input()
+    if line.isnumeric():
+        cycle = int(line)
+        break
+    else:
+        print("Try again")
+
 def sigint_handler(signum, frame):
     dwf.FDwfDigitalOutReset(hdwf)
     dwf.FDwfDeviceCloseAll()
@@ -184,7 +204,7 @@ if fCorrupted:
 start = 0
 state = exp.init_state()
 samples = []
-f = open(time.strftime("%d%m-%H%M%S", time.localtime())+"record.csv", "w")
+f = open(f"subject_{subject}_medium_c{cycle}.csv", "w")
 for i in range(len(rgdSamples)):
     state = exp.act_state(state, i)
     entry = (start, rgdSamples[i], state.value)
