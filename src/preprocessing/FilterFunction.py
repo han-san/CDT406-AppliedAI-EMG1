@@ -33,7 +33,7 @@ def filter_function(data_array, filter=0, filter_type=None, normalization_type=N
     and a low-pass Butterworth filter to the input data array.
     Parameters: data_array (numpy.ndarray): The input data array to be processed.
                 filter (int): If 1, apply the filter; if 0, do not apply the filter.
-                filter_type (str): The type of filter to use ('cheby1_20to125', 'cheby1_125to250', 'butter_20to500', ).
+                filter_type (str): The type of filter to use ('cheby1_20to125', 'cheby1_125to250', 'cheby1_20to250', 'butter_20to500', ).
                 normalization_type (str): The type of normalization to use ('min-max', 'z-score').
     """
     #cheby1 8th order pass ripple 0.1dB 20-250Hz
