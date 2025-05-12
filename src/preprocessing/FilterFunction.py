@@ -11,13 +11,29 @@ class filter (Enum):
     NO_FILTER = 0
     FILTER = 1
 
-def filter_function(data_array, filter, filter_type=None, normalization_type=None):
+class filter_type (Enum):
+    """
+    Enum class for filter types.
+    """
+    Range20TO125 = 'cheby1_20to125'
+    Range125TO250 = 'cheby1_125to250'
+    Range20TO250 = 'cheby1_20to250'
+    Range20TO500 = 'butter_20to500'
+
+class normalization_type (Enum):
+    """
+    Enum class for normalization types.
+    """
+    min_max = 'min-max'
+    z_score = 'z-score'
+
+def filter_function(data_array, filter=0, filter_type=None, normalization_type=None):
     """
     This function applies mean subtraction, absolute value, normalization
     and a low-pass Butterworth filter to the input data array.
     Parameters: data_array (numpy.ndarray): The input data array to be processed.
                 filter (int): If 1, apply the filter; if 0, do not apply the filter.
-                filter_type (str): The type of filter to use ('cheby1_20to125', 'cheby1_125to250', 'butter_20to500').
+                filter_type (str): The type of filter to use ('cheby1_20to125', 'cheby1_125to250', 'butter_20to500', ).
                 normalization_type (str): The type of normalization to use ('min-max', 'z-score').
     """
     #cheby1 8th order pass ripple 0.1dB 20-250Hz
@@ -63,12 +79,14 @@ def filter_function(data_array, filter, filter_type=None, normalization_type=Non
 
     if filter_type == 'cheby1_20to125':
         sos = cheby1sos20to125
-    elif filter_type == 'cheby1_125to250':
+    elif filter_type == 'cheby1_20to250':
         sos = cheby1sos20to250
     elif filter_type == 'butter_20to500':
         sos = buttersos20to500
+    elif filter_type == 'cheby1_125to250':
+        sos = cheby1sos125to250
     else:
-        raise ValueError("Invalid filter_type. Choose from 'cheby1_20to125', 'cheby1_125to250', or 'butter_20to500'.")
+        raise ValueError("Invalid filter_type. Choose from 'cheby1_20to125', 'cheby1_125to250', 'cheby1_20to250' ,'butter_20to500'.")
 
     # calculate the mean
     mean = float(np.mean(data_array))
@@ -111,4 +129,4 @@ def filter_function(data_array, filter, filter_type=None, normalization_type=Non
 
 
 # Call the filter_function with the data_array
-# filtered_data = filter_function(window, 1)
+# filtered_data = filter_function(window, filter=filter.NO_FILTER, filter_type=filter_type.R20TO125, normalization_type=normalization_type.min_max)
