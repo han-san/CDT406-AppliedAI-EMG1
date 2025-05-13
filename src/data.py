@@ -224,9 +224,36 @@ def get_io_from_myoflex(data_dir: Path) -> tuple[Input, Output]:
     model_windows = [item for row in segmented_measurements for item in row]
     model_input = Input(model_windows)
 
-    # Since we haven't yet decided exactly how to handle the labeling, we use the label of
-    # the first measurement in the window as the desired label.
-    window_labels = [window.labels[0] for window in model_windows]
+    def classify_window(window: Data.Window) -> State:
+        """Classify the window based on its composition of labels.
+
+        The classification is based on how many consecutive labels are found at the end
+        of the window. If the last 20% of the window contains only labels for a
+        transient state, the window gets labeled as that transient state. Otherwise, if
+        the last 50% of the window gets labeled as a static state, the window gets
+        labeled as that static state.
+
+        This gives a higher priority to transient states when we are moving towards
+        them. In our labeling, we are quite conservative when moving from a transient
+        state to a static state, so we instead
+        """
+        labels = window.labels
+        last_twenty = labels[-len(labels) // 2 :]
+        first_twenty = labels[: len(labels) // 2]
+        # We assume that labeling is consecutive; moves in order rest, grip, hold,
+        # release, rest; and windows will never contain more than 2 types of labels.
+
+        # If the last 20% are all grips/releases, classify the window as grip/release.
+        if last_twenty[-1] in (State.GRIP, State.RELEASE):
+            return last_twenty[0]
+        # If the first 20% are all grips/releases, classify the window as grip/release.
+        if first_twenty[0] in (State.GRIP, State.RELEASE):
+            return first_twenty[-1]
+        # If there are no transient states at front or back of window, it should contain
+        # only one static state, so we just the latest label.
+        return labels[-1]
+
+    window_labels = [classify_window(window) for window in model_windows]
     model_desired_output = Output(window_labels)
     return model_input, model_desired_output
 
