@@ -5,6 +5,8 @@ Provides the functionality needed to create, train, and execute our AI model.
 
 from __future__ import annotations
 
+import datetime
+import sys
 from enum import Enum
 from typing import TYPE_CHECKING
 
