@@ -9,17 +9,17 @@ from preprocessing.Moving_average_filter import calculate_moving_average
 class FilterType(Enum):
     """Enum class for filter types."""
 
-    Range20TO125 = "cheby1_20to125"
-    Range125TO250 = "cheby1_125to250"
-    Range20TO250 = "cheby1_20to250"
-    Range20TO500 = "butter_20to500"
+    RANGE_20_TO_125_CHEBY1 = 0
+    RANGE_125_TO_250_CHEBY1 = 1
+    RANGE_20_TO_250_CHEBY1 = 2
+    RANGE_20_TO_500_BUTTER = 3
 
 
 class NormalizationType(Enum):
     """Enum class for normalization types."""
 
-    min_max = "min-max"
-    z_score = "z-score"
+    MIN_MAX = 0
+    Z_SCORE = 1
 
 
 def filter_function(
@@ -256,13 +256,13 @@ def filter_function(
         ]
     )
 
-    if filter_type == "cheby1_20to125":
+    if filter_type == FilterType.RANGE_20_TO_125_CHEBY1:
         sos = cheby1sos20to125
-    elif filter_type == "cheby1_20to250":
+    elif filter_type == FilterType.RANGE_20_TO_250_CHEBY1:
         sos = cheby1sos20to250
-    elif filter_type == "butter_20to500":
+    elif filter_type == FilterType.RANGE_20_TO_500_BUTTER:
         sos = buttersos20to500
-    elif filter_type == "cheby1_125to250":
+    elif filter_type == FilterType.RANGE_125_TO_250_CHEBY1:
         sos = cheby1sos125to250
     elif filter_type is None:
         pass
@@ -288,7 +288,7 @@ def filter_function(
     if use_moving_average == 1:
         data_array = calculate_moving_average(data_array)
 
-    if normalization_type == "z-score":
+    if normalization_type == NormalizationType.Z_SCORE:
         # z-score normalization
         data_array = (data_array - np.mean(data_array)) / np.std(
             data_array

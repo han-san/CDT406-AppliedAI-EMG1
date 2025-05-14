@@ -53,8 +53,8 @@ class Window:
         self.window = np.array(
             filter_function(
                 window,
-                filter_type=FilterType.Range20TO500.value,
-                normalization_type=NormalizationType.min_max.value,
+                filter_type=FilterType.RANGE_20_TO_500_BUTTER,
+                normalization_type=NormalizationType.MIN_MAX,
                 use_moving_average=1,
             ),
             dtype=np.float32,
