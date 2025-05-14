@@ -1,8 +1,8 @@
-import numpy as np
 from enum import Enum
-from scipy.signal import sosfiltfilt
 
-# from pathlib import Path
+import numpy as np
+from scipy.signal import sosfiltfilt  # type: ignore[import-untyped]
+
 from preprocessing.Moving_average_filter import calculate_moving_average
 
 
