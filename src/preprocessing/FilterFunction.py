@@ -38,8 +38,8 @@ def filter_function(
 ) -> npt.NDArray[np.float32]:
     """Filter the data passed in in different ways.
 
-    This function applies mean subtraction, absolute value, normalization
-    and a low-pass Butterworth filter to the input data array.
+    This function applies mean subtraction, absolute value, and then optionally a
+    filter, normalization, and moving average to the input array.
     """
     # cheby1 8th order pass ripple 0.1dB 20-250Hz
     cheby1sos20to250 = np.array(
