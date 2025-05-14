@@ -2,6 +2,7 @@ import numpy as np
 
 
 def calculate_moving_average(x):
+    """Calculate the exponential moving average of the provided sequence."""
     alpha = 0.1
     ema = np.zeros_like(x)
     x = np.array(x)
@@ -13,6 +14,7 @@ def calculate_moving_average(x):
 
 
 def simple_moving_average(x):
+    """Calculate the simple moving average of the provided sequence."""
     N = 50  # Window size
     # Pad the input to avoid losing samples
     padded_x = np.pad(x, (N, 0), mode="edge")

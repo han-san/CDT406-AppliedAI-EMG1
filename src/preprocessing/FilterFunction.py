@@ -7,9 +7,7 @@ from preprocessing.Moving_average_filter import calculate_moving_average
 
 
 class FilterType(Enum):
-    """
-    Enum class for filter types.
-    """
+    """Enum class for filter types."""
 
     Range20TO125 = "cheby1_20to125"
     Range125TO250 = "cheby1_125to250"
@@ -18,9 +16,7 @@ class FilterType(Enum):
 
 
 class NormalizationType(Enum):
-    """
-    Enum class for normalization types.
-    """
+    """Enum class for normalization types."""
 
     min_max = "min-max"
     z_score = "z-score"
@@ -33,9 +29,11 @@ def filter_function(
     normalization_type=None,
     use_moving_average=0,
 ):
-    """
+    """Filter the data passed in in different ways.
+
     This function applies mean subtraction, absolute value, normalization
     and a low-pass Butterworth filter to the input data array.
+
     Parameters: data_array (numpy.ndarray): The input data array to be processed.
                 filter (int): If 1, apply the filter; if 0, do not apply the filter.
                 filter_type (str): The type of filter to use ('cheby1_20to125', 'cheby1_125to250', 'cheby1_20to250', 'butter_20to500', ).
