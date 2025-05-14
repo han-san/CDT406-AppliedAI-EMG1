@@ -44,45 +44,62 @@ def to_state(i: int) -> State:
     raise err
 
 
+class Window:
+    """Represents a window of data measurements."""
+
+    def __init__(
+        self,
+        window: npt.NDArray[np.float32],
+    ) -> None:
+        """Construct a window of data."""
+        self.window = np.array(
+            filter_function(
+                window,
+                1,
+                filter_type=filter_type.Range20TO500.value,
+                normalization_type=normalization_type.min_max.value,
+                use_moving_average=1,
+            ),
+            dtype=np.float32,
+        )
+
+    def __len__(self) -> int:
+        """Return the length of the window."""
+        return len(self.window)
+
+    window: npt.NDArray[np.float32]
+
+
+class LabeledWindow:
+    """Represents a window of data measurements paired with their labelings."""
+
+    def __init__(self, window: Window, labels: list[State]) -> None:
+        """Construct a window containing labels for each measurement."""
+        self.window = window
+        self.labels = labels
+
+    def __len__(self) -> int:
+        """Return the length of the window."""
+        return len(self.window)
+
+    window: Window
+    labels: list[State]
+
+
 class Data:
     """Represents a list of data measurements."""
-
-    class Window:
-        """Represents a window of data measurements."""
-
-        def __init__(
-            self,
-            window: npt.NDArray[np.float32],
-            labels: list[State],
-        ) -> None:
-            """Construct a window of data."""
-            self.window = np.array(
-                filter_function(
-                    window,
-                    1,
-                    filter_type=filter_type.Range20TO500.value,
-                    normalization_type=normalization_type.min_max.value,
-                    use_moving_average=1,
-                ),
-                dtype=np.float32,
-            )
-            self.labels = labels
-
-        def __len__(self) -> int:
-            """Return the length of the window."""
-            return len(self.window)
-
-        window: npt.NDArray[np.float32]
-        labels: list[State]
 
     def __init__(self, data: list[float], labels: list[State]) -> None:
         """Construct a data object representing a list of float measurements."""
         self._data = np.array(data, dtype=np.float32)
         self._labels = labels
 
-    def window(self, begin: int, end: int) -> Window:
+    def window(self, begin: int, end: int) -> LabeledWindow:
         """Return a window of the data, from begin to end."""
-        return self.Window(self._data[begin:end], self._labels[begin:end])
+        return LabeledWindow(
+            Window(self._data[begin:end]),
+            self._labels[begin:end],
+        )
 
     def __len__(self) -> int:
         """Return the number of measurements in the data."""
@@ -137,7 +154,12 @@ def load_data_files(filepaths: list[Path], data_type: DataType) -> list[Data]:
     return [load_data_file(path, data_type) for path in filepaths]
 
 
-def create_windows(data: Data, *, window_size: int, overlap: int) -> list[Data.Window]:
+def create_windows(
+    data: Data,
+    *,
+    window_size: int,
+    overlap: int,
+) -> list[LabeledWindow]:
     """Split measurements into multiple windows."""
     # TODO(johan): Decide what to do with the last window if it is < windowSize.
     #   - ignore?
@@ -155,7 +177,7 @@ def create_windows(data: Data, *, window_size: int, overlap: int) -> list[Data.W
     ]
 
     return [
-        Data.Window(np.array(window), labels)
+        LabeledWindow(Window(np.array(window)), labels)
         for window, labels in zip(data_windows, label_windows)
     ]
 
@@ -163,7 +185,7 @@ def create_windows(data: Data, *, window_size: int, overlap: int) -> list[Data.W
 class Input:
     """Input that can be fed to the AI model."""
 
-    def __init__(self, window: Data.Window) -> None:
+    def __init__(self, window: Window) -> None:
         """Construct input from a window."""
         # The LSTM layer expects 3D input, where the dimensions are
         # (samples, time steps, features).
@@ -223,9 +245,9 @@ def get_io_from_myoflex(data_dir: Path) -> tuple[list[Input], list[Output]]:
 
     # Flatten windows so we can train on them in one go.
     model_windows = [item for row in segmented_measurements for item in row]
-    model_input = [Input(window) for window in model_windows]
+    model_input = [Input(window.window) for window in model_windows]
 
-    def classify_window(window: Data.Window) -> State:
+    def classify_window(window: LabeledWindow) -> State:
         """Classify the window based on its composition of labels.
 
         The classification is based on how many consecutive labels are found at the end
@@ -278,7 +300,7 @@ def get_io_from_our_data(
 
     # Flatten windows so we can train on them in one go.
     model_windows = [item for row in segmented_measurements for item in row]
-    model_input = [Input(window) for window in model_windows]
+    model_input = [Input(window.window) for window in model_windows]
 
     # FIXME: Since we haven't yet decided exactly how to handle the labeling, we use the
     # label of the last measurement in the window as the desired label.
