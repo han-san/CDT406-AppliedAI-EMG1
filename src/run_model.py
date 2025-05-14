@@ -1,30 +1,19 @@
 import time
-from pathlib import Path
-from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 
-from data import Input, Output, State
+from data import Input, Output
+from tflite_model import TFLiteModel
 
 
 def load_and_run_tflite(
-    interpreter: Any,  # Either tf.lite.Interpreter or tflite.interpreter.
-    model_path: Path,
+    model: TFLiteModel,
     model_input: list[Input],
     expected_output: list[Output],
 ) -> None:
     """Test the accuracy of the model."""
-    # Load the model using TFLite/LiteRT.
-    interpreter = interpreter(model_path=str(model_path))
-    interpreter.allocate_tensors()
-
-    input_details = interpreter.get_input_details()
-    output_details = interpreter.get_output_details()
-
-    input_shape = input_details[0]["shape"]
-
     correct_classifications = [0, 0, 0, 0]
     incorrect_classifications = [0, 0, 0, 0]
     total_classifications = [0, 0, 0, 0]
@@ -34,15 +23,9 @@ def load_and_run_tflite(
         zip(model_input, expected_output),
     ):
         start = time.perf_counter()
-        input_data = in_window.input.reshape(input_shape)
-        interpreter.set_tensor(input_details[0]["index"], input_data)
 
-        interpreter.invoke()
-
-        # The function `get_tensor()` returns a copy of the tensor data.
-        # Use `tensor()` in order to get a pointer to the tensor.
-        output_data = interpreter.get_tensor(output_details[0]["index"])
-        predictions.append(output_data[0])
+        output_data = model.infer(in_window)
+        predictions.append(output_data)
 
         dt = time.perf_counter() - start
 
@@ -72,9 +55,7 @@ def load_and_run_tflite(
             f"{i} - {correct_count / (i + 1) * 100:.2f}% {dt * 1000:.3f}ms out:[",
             end="",
         )
-        for out_col, target_col, data in zip(
-            output_colors, target_colors, output_data[0]
-        ):
+        for out_col, target_col, data in zip(output_colors, target_colors, output_data):
             print(f"{out_col}{target_col}{data * 100:.2f}%{end_color}, ", end="")
         print("\b\b]")
 
