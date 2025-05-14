@@ -1,6 +1,7 @@
 from enum import Enum
 
 import numpy as np
+import numpy.typing as npt
 
 
 class MovingAverageType(Enum):
@@ -9,7 +10,8 @@ class MovingAverageType(Enum):
     SMA = 0
     EMA = 1
 
-def calculate_moving_average(x):
+
+def calculate_moving_average(x: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
     """Calculate the exponential moving average of the provided sequence."""
     alpha = 0.1
     ema = np.zeros_like(x)
@@ -21,7 +23,7 @@ def calculate_moving_average(x):
     return ema
 
 
-def simple_moving_average(x):
+def simple_moving_average(x: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
     """Calculate the simple moving average of the provided sequence."""
     N = 50  # Window size
     # Pad the input to avoid losing samples

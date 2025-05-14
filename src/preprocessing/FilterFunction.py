@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from enum import Enum
 
 import numpy as np
+import numpy.typing as npt
 from scipy.signal import sosfiltfilt  # type: ignore[import-untyped]
 
 from preprocessing.Moving_average_filter import (
@@ -27,21 +30,16 @@ class NormalizationType(Enum):
 
 
 def filter_function(
-    data_array,
+    data_array: npt.NDArray[np.float32],
     *,
-    filter_type=None,
-    normalization_type=None,
-    moving_average_type=None,
-):
+    filter_type: FilterType | None = None,
+    normalization_type: NormalizationType | None = None,
+    moving_average_type: MovingAverageType | None = None,
+) -> npt.NDArray[np.float32]:
     """Filter the data passed in in different ways.
 
     This function applies mean subtraction, absolute value, normalization
     and a low-pass Butterworth filter to the input data array.
-
-    Parameters: data_array (numpy.ndarray): The input data array to be processed.
-                filter (int): If 1, apply the filter; if 0, do not apply the filter.
-                filter_type (str): The type of filter to use ('cheby1_20to125', 'cheby1_125to250', 'cheby1_20to250', 'butter_20to500', ).
-                normalization_type (str): The type of normalization to use ('min-max', 'z-score').
     """
     # cheby1 8th order pass ripple 0.1dB 20-250Hz
     cheby1sos20to250 = np.array(
@@ -299,12 +297,9 @@ def filter_function(
         err = f"Invalid moving average type [{moving_average_type}]."
         raise ValueError(err)
 
-
     if normalization_type == NormalizationType.Z_SCORE:
         # z-score normalization
-        data_array = (data_array - np.mean(data_array)) / np.std(
-            data_array
-        )
+        data_array = (data_array - np.mean(data_array)) / np.std(data_array)
     elif normalization_type == NormalizationType.MIN_MAX:
         # min-max normalization
         data_array = (data_array - np.min(data_array)) / (
