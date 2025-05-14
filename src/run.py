@@ -3,7 +3,8 @@ from pathlib import Path
 
 import tflite_runtime.interpreter as tflite
 
-from data import DataType, get_input_and_output_from_data_files
+from data import DataType
+from dataset_loading import get_input_and_output_from_data_files
 from run_model import run_metrics_on_tflite_model
 from tflite_model import TFLiteModel
 
