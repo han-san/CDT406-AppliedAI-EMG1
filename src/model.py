@@ -105,6 +105,7 @@ class Model:
             model_input.input,
             desired_output.output,
             batch_size=batch_size,
+            validation_split=0.2,
             epochs=epochs,
             callbacks=[tensorboard_callback],
             verbose=2,
