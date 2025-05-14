@@ -5,8 +5,8 @@ import numpy.typing as npt
 
 from preprocessing.FilterFunction import (
     filter_function,
-    filter_type,
-    normalization_type,
+    FilterType,
+    NormalizationType,
 )
 
 # The amount of measurements included in each reading.
@@ -53,8 +53,8 @@ class Window:
         self.window = np.array(
             filter_function(
                 window,
-                filter_type=filter_type.Range20TO500.value,
-                normalization_type=normalization_type.min_max.value,
+                filter_type=FilterType.Range20TO500.value,
+                normalization_type=NormalizationType.min_max.value,
                 use_moving_average=1,
             ),
             dtype=np.float32,

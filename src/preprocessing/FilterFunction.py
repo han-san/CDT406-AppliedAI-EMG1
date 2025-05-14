@@ -6,7 +6,7 @@ from scipy.signal import sosfiltfilt
 from preprocessing.Moving_average_filter import calculate_moving_average
 
 
-class filter_type(Enum):
+class FilterType(Enum):
     """
     Enum class for filter types.
     """
@@ -17,7 +17,7 @@ class filter_type(Enum):
     Range20TO500 = "butter_20to500"
 
 
-class normalization_type(Enum):
+class NormalizationType(Enum):
     """
     Enum class for normalization types.
     """
