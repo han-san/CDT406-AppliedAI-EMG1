@@ -2,7 +2,7 @@ import numpy as np
 from enum import Enum
 from scipy.signal import sosfiltfilt
 # from pathlib import Path
-from Moving_average_filter import calculate_moving_average
+from preprocessing.Moving_average_filter import calculate_moving_average
 
 class filter (Enum):
     """
