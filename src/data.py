@@ -53,7 +53,6 @@ class Window:
         self.window = np.array(
             filter_function(
                 window,
-                filter=1,
                 filter_type=filter_type.Range20TO500.value,
                 normalization_type=normalization_type.min_max.value,
                 use_moving_average=1,

@@ -29,7 +29,6 @@ class normalization_type(Enum):
 def filter_function(
     data_array,
     *,
-    filter=0,
     filter_type=None,
     normalization_type=None,
     use_moving_average=0,
@@ -267,6 +266,8 @@ def filter_function(
         sos = buttersos20to500
     elif filter_type == "cheby1_125to250":
         sos = cheby1sos125to250
+    elif filter_type is None:
+        pass
     else:
         raise ValueError(
             "Invalid filter_type. Choose from 'cheby1_20to125', 'cheby1_125to250', 'cheby1_20to250' ,'butter_20to500'."
@@ -280,7 +281,7 @@ def filter_function(
 
     # Apply the filter to the windowed data
 
-    if filter == 1:
+    if filter_type is not None:
         # Apply the filter to the windowed data
         filtered_data_array = sosfiltfilt(sos, data_array_centered)
 
