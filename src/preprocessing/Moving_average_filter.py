@@ -16,10 +16,11 @@ def exponential_moving_average(x: npt.NDArray[np.float32]) -> npt.NDArray[np.flo
     alpha = 0.1
     ema = np.zeros_like(x)
     x = np.array(x)
-    ema[0] = x[0]
     # Initialize with the first value
+    ema[0] = x[0]
+    times_alpha = x * alpha
     for i in range(1, len(x)):
-        ema[i] = alpha * x[i] + (1 - alpha) * ema[i - 1]
+        ema[i] = times_alpha[i] + (1 - alpha) * ema[i - 1]
     return ema
 
 
