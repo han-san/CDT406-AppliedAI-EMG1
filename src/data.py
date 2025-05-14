@@ -5,7 +5,11 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd  # type: ignore[import-untyped]
 
-from preprocessing.FilterFunction import filter_function
+from preprocessing.FilterFunction import (
+    filter_function,
+    filter_type,
+    normalization_type,
+)
 
 # The amount of measurements included in each reading.
 channel_count = 1
@@ -52,7 +56,13 @@ class Data:
             labels: list[State],
         ) -> None:
             """Construct a window of data."""
-            self.window = filter_function(window, 1)
+            self.window = filter_function(
+                window,
+                1,
+                filter_type=filter_type.Range20TO500.value,
+                normalization_type=normalization_type.min_max.value,
+                use_moving_average=1,
+            )
             self.labels = labels
 
         def __len__(self) -> int:
