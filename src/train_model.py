@@ -44,35 +44,40 @@ if model_path.exists():
     exit()
 
 
-def limit_training_data(train_in: Input, train_out: Output) -> None:
+def limit_training_data(
+    train_in: list[Input],
+    train_out: list[Output],
+) -> None:
     """Equalizes the training data of the different classes.
 
     Limits the training data so that each class at maximum has the same number of
     windows as the one of the two transient states with the most training data.
     """
     rng = np.random.default_rng()
-    comb = list(zip(train_in.input, train_out.output))
+    in_data = [inp.input for inp in train_in]
+    out_data = [out.output for out in train_out]
+    comb = list(zip(in_data, out_data))
     rng.shuffle(comb)
 
-    train_in.input = np.array([x for x, _ in comb])
-    train_out.output = np.array([y for _, y in comb])
+    shuffled_in_data = np.array([x for x, _ in comb])
+    shuffled_out_data = np.array([y for _, y in comb])
 
-    rest_condition = [np.all(state == State.REST.value) for state in train_out.output]
-    grip_condition = [np.all(state == State.GRIP.value) for state in train_out.output]
-    hold_condition = [np.all(state == State.HOLD.value) for state in train_out.output]
+    rest_condition = [np.all(state == State.REST.value) for state in shuffled_out_data]
+    grip_condition = [np.all(state == State.GRIP.value) for state in shuffled_out_data]
+    hold_condition = [np.all(state == State.HOLD.value) for state in shuffled_out_data]
     release_condition = [
-        np.all(state == State.RELEASE.value) for state in train_out.output
+        np.all(state == State.RELEASE.value) for state in shuffled_out_data
     ]
 
-    rest_outputs = train_out.output[rest_condition]
-    grip_outputs = train_out.output[grip_condition]
-    hold_outputs = train_out.output[hold_condition]
-    release_outputs = train_out.output[release_condition]
+    rest_outputs = shuffled_out_data[rest_condition]
+    grip_outputs = shuffled_out_data[grip_condition]
+    hold_outputs = shuffled_out_data[hold_condition]
+    release_outputs = shuffled_out_data[release_condition]
 
-    rest_inputs = train_in.input[rest_condition]
-    grip_inputs = train_in.input[grip_condition]
-    hold_inputs = train_in.input[hold_condition]
-    release_inputs = train_in.input[release_condition]
+    rest_inputs = shuffled_in_data[rest_condition]
+    grip_inputs = shuffled_in_data[grip_condition]
+    hold_inputs = shuffled_in_data[hold_condition]
+    release_inputs = shuffled_in_data[release_condition]
 
     longest_transient = max(len(grip_inputs), len(release_inputs))
 
@@ -96,8 +101,11 @@ def limit_training_data(train_in: Input, train_out: Output) -> None:
     comb = list(zip(new_input, new_output))
     rng.shuffle(comb)
 
-    train_in.input = np.array([x for x, _ in comb])
-    train_out.output = np.array([y for _, y in comb])
+    for dest_in, src_in in zip(train_in, shuffled_in_data):
+        dest_in.input = src_in
+
+    for dest_out, src_out in zip(train_out, shuffled_out_data):
+        dest_out.output = src_out
 
 
 limit_training_data(model_input, model_desired_output)
