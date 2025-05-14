@@ -275,68 +275,28 @@ def filter_function(
     mean = float(np.mean(data_array))
 
     # mean subtraction
-    data_array_centered = data_array - mean
+    data_array = data_array - mean
 
     # Apply the filter to the windowed data
 
     if filter_type is not None:
         # Apply the filter to the windowed data
-        filtered_data_array = sosfiltfilt(sos, data_array_centered)
+        filtered_data_array = sosfiltfilt(sos, data_array)
 
-        filtered_data_array_abs = np.abs(filtered_data_array)
+        data_array = np.abs(filtered_data_array)
 
-        if use_moving_average == 1:
-            filtered_data_array_abs_mv = calculate_moving_average(
-                filtered_data_array_abs
-            )
-        else:
-            filtered_data_array_abs_mv = filtered_data_array_abs
-        if normalization_type == "z-score":
-            # z-score normalization
-            data_array_filtered_output = (
-                filtered_data_array_abs_mv - np.mean(filtered_data_array_abs_mv)
-            ) / np.std(filtered_data_array_abs_mv)
-        else:
-            # min-max normalization
-            data_array_filtered_output = (
-                filtered_data_array_abs_mv - np.min(filtered_data_array_abs_mv)
-            ) / (
-                np.max(filtered_data_array_abs_mv) - np.min(filtered_data_array_abs_mv)
-            )
+    if use_moving_average == 1:
+        data_array = calculate_moving_average(data_array)
 
-        return data_array_filtered_output
+    if normalization_type == "z-score":
+        # z-score normalization
+        data_array = (data_array - np.mean(data_array)) / np.std(
+            data_array
+        )
     else:
-        # absolute value
-        data_array_centered_abs = np.abs(data_array_centered)
+        # min-max normalization
+        data_array = (data_array - np.min(data_array)) / (
+            np.max(data_array) - np.min(data_array)
+        )
 
-        if use_moving_average == 1:
-            print("Using moving average")
-            data_array_centered_abs_mv = calculate_moving_average(
-                data_array_centered_abs
-            )
-        else:
-            print("Not using moving average")
-            data_array_centered_abs_mv = data_array_centered_abs
-
-        if normalization_type == "z-score":
-            # z-score normalization
-            data_array_output = (
-                data_array_centered_abs_mv - np.mean(data_array_centered_abs_mv)
-            ) / np.std(data_array_centered_abs_mv)
-        elif normalization_type == "min-max":
-            # min-max normalization
-            data_array_output = (
-                data_array_centered_abs_mv - np.min(data_array_centered_abs_mv)
-            ) / (
-                np.max(data_array_centered_abs_mv) - np.min(data_array_centered_abs_mv)
-            )
-        else:
-            raise ValueError(
-                "Invalid normalization_type. Choose from 'z-score' or 'min-max'."
-            )
-        # return normalized data
-        return data_array_output
-
-
-# Call the filter_function with the data_array
-# filtered_data = filter_function(window, filter=filter.NO_FILTER, filter_type=filter_type.R20TO125, normalization_type=normalization_type.min_max)
+    return data_array
