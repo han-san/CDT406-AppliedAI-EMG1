@@ -2,7 +2,7 @@ import numpy as np
 from enum import Enum
 from scipy.signal import sosfiltfilt
 # from pathlib import Path
-
+from Moving_average_filter import calculate_moving_average
 
 class filter (Enum):
     """
@@ -27,7 +27,7 @@ class normalization_type (Enum):
     min_max = 'min-max'
     z_score = 'z-score'
 
-def filter_function(data_array, filter=0, filter_type=None, normalization_type=None):
+def filter_function(data_array, filter=0, filter_type=None, normalization_type=None, use_moving_average=0):
     """
     This function applies mean subtraction, absolute value, normalization
     and a low-pass Butterworth filter to the input data array.
@@ -102,13 +102,16 @@ def filter_function(data_array, filter=0, filter_type=None, normalization_type=N
 
         filtered_data_array_abs = np.abs(filtered_data_array)
 
-
+        if use_moving_average == 1:
+            filtered_data_array_abs_mv = calculate_moving_average(filtered_data_array_abs)
+        else:
+            filtered_data_array_abs_mv = filtered_data_array_abs
         if normalization_type == 'z-score':
             # z-score normalization
-            data_array_filtered_output = (filtered_data_array_abs - np.mean(filtered_data_array_abs)) / np.std(filtered_data_array_abs)
+            data_array_filtered_output = (filtered_data_array_abs_mv - np.mean(filtered_data_array_abs_mv)) / np.std(filtered_data_array_abs_mv)
         else:
             # min-max normalization
-            data_array_filtered_output = (filtered_data_array_abs - np.min(filtered_data_array_abs)) / (np.max(filtered_data_array_abs) - np.min(filtered_data_array_abs))
+            data_array_filtered_output = (filtered_data_array_abs_mv - np.min(filtered_data_array_abs_mv)) / (np.max(filtered_data_array_abs_mv) - np.min(filtered_data_array_abs_mv))
 
 
         return data_array_filtered_output
@@ -116,12 +119,21 @@ def filter_function(data_array, filter=0, filter_type=None, normalization_type=N
         # absolute value
         data_array_centered_abs = np.abs(data_array_centered)
 
+        if use_moving_average == 1:
+            print("Using moving average")
+            data_array_centered_abs_mv = calculate_moving_average(data_array_centered_abs)
+        else:
+            print("Not using moving average")
+            data_array_centered_abs_mv = data_array_centered_abs
+
+
+
         if normalization_type == 'z-score':
             # z-score normalization
-            data_array_output = (data_array_centered_abs - np.mean(data_array_centered_abs)) / np.std(data_array_centered_abs)
+            data_array_output = (data_array_centered_abs_mv - np.mean(data_array_centered_abs_mv)) / np.std(data_array_centered_abs_mv)
         elif normalization_type == 'min-max':
             # min-max normalization
-            data_array_output = (data_array_centered_abs - np.min(data_array_centered_abs)) / (np.max(data_array_centered_abs) - np.min(data_array_centered_abs))
+            data_array_output = (data_array_centered_abs_mv - np.min(data_array_centered_abs_mv)) / (np.max(data_array_centered_abs_mv) - np.min(data_array_centered_abs_mv))
         else:
             raise ValueError("Invalid normalization_type. Choose from 'z-score' or 'min-max'.")
         # return normalized data
