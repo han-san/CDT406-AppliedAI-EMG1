@@ -1,5 +1,13 @@
+from enum import Enum
+
 import numpy as np
 
+
+class MovingAverageType(Enum):
+    """A type of moving average."""
+
+    SMA = 0
+    EMA = 1
 
 def calculate_moving_average(x):
     """Calculate the exponential moving average of the provided sequence."""

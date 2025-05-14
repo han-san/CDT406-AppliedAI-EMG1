@@ -3,7 +3,11 @@ from enum import Enum
 import numpy as np
 from scipy.signal import sosfiltfilt  # type: ignore[import-untyped]
 
-from preprocessing.Moving_average_filter import calculate_moving_average
+from preprocessing.Moving_average_filter import (
+    MovingAverageType,
+    calculate_moving_average,
+    simple_moving_average,
+)
 
 
 class FilterType(Enum):
@@ -27,7 +31,7 @@ def filter_function(
     *,
     filter_type=None,
     normalization_type=None,
-    use_moving_average=0,
+    moving_average_type=None,
 ):
     """Filter the data passed in in different ways.
 
@@ -285,8 +289,16 @@ def filter_function(
 
         data_array = np.abs(filtered_data_array)
 
-    if use_moving_average == 1:
+    if moving_average_type == MovingAverageType.EMA:
         data_array = calculate_moving_average(data_array)
+    elif moving_average_type == MovingAverageType.SMA:
+        data_array = simple_moving_average(data_array)
+    elif moving_average_type is None:
+        pass
+    else:
+        err = f"Invalid moving average type [{moving_average_type}]."
+        raise ValueError(err)
+
 
     if normalization_type == NormalizationType.Z_SCORE:
         # z-score normalization

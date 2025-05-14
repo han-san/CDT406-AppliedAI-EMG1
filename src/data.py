@@ -4,10 +4,11 @@ import numpy as np
 import numpy.typing as npt
 
 from preprocessing.FilterFunction import (
-    filter_function,
     FilterType,
     NormalizationType,
+    filter_function,
 )
+from preprocessing.Moving_average_filter import MovingAverageType
 
 # The amount of measurements included in each reading.
 channel_count = 1
@@ -55,7 +56,7 @@ class Window:
                 window,
                 filter_type=FilterType.RANGE_20_TO_500_BUTTER,
                 normalization_type=NormalizationType.MIN_MAX,
-                use_moving_average=1,
+                moving_average_type=MovingAverageType.EMA,
             ),
             dtype=np.float32,
         )
