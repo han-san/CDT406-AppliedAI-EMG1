@@ -56,12 +56,15 @@ class Data:
             labels: list[State],
         ) -> None:
             """Construct a window of data."""
-            self.window = filter_function(
-                window,
-                1,
-                filter_type=filter_type.Range20TO500.value,
-                normalization_type=normalization_type.min_max.value,
-                use_moving_average=1,
+            self.window = np.array(
+                filter_function(
+                    window,
+                    1,
+                    filter_type=filter_type.Range20TO500.value,
+                    normalization_type=normalization_type.min_max.value,
+                    use_moving_average=1,
+                ),
+                dtype=np.float32,
             )
             self.labels = labels
 
@@ -160,41 +163,29 @@ def create_windows(data: Data, *, window_size: int, overlap: int) -> list[Data.W
 class Input:
     """Input that can be fed to the AI model."""
 
-    def __init__(self, windows: list[Data.Window]) -> None:
-        """Construct input from windows."""
-        np_windows = np.array(
-            [window.window for window in windows],
-            dtype=np.float32,
-        )
+    def __init__(self, window: Data.Window) -> None:
+        """Construct input from a window."""
         # The LSTM layer expects 3D input, where the dimensions are
         # (samples, time steps, features).
         # https://machinelearningmastery.com/reshape-input-data-long-short-term-memory-networks-keras/
-        self.input = np_windows.reshape(
-            (len(np_windows), len(np_windows[0]), channel_count),
-        )
+        # One input represents the (time steps, features) part, and then an array of inputs
+        # creates the (samples, _, _) dimension.
+        self.input = window.window.reshape((len(window.window), channel_count))
 
-    # 2D array
     input: npt.NDArray[np.float32]
 
 
 class Output:
     """Output from the AI model."""
 
-    def __init__(self, output_states: list[State]) -> None:
-        """Construct from the 2D output from the AI model."""
-        self.output = np.array(
-            [
-                np.array(output_state.value, dtype=np.float32)
-                for output_state in output_states
-            ],
-            dtype=np.float32,
-        )
+    def __init__(self, output_state: State) -> None:
+        """Construct output corresponding to the provided state."""
+        self.output = np.array(output_state.value, dtype=np.float32)
 
-    # 2D array
     output: npt.NDArray[np.float32]
 
 
-def get_io_from_myoflex(data_dir: Path) -> tuple[Input, Output]:
+def get_io_from_myoflex(data_dir: Path) -> tuple[list[Input], list[Output]]:
     """Load the input and output data from files in the provided directory."""
     # https://www.nature.com/articles/s41597-023-02223-x
     # Format for filenames in wyoflex dataset:
@@ -232,7 +223,7 @@ def get_io_from_myoflex(data_dir: Path) -> tuple[Input, Output]:
 
     # Flatten windows so we can train on them in one go.
     model_windows = [item for row in segmented_measurements for item in row]
-    model_input = Input(model_windows)
+    model_input = [Input(window) for window in model_windows]
 
     def classify_window(window: Data.Window) -> State:
         """Classify the window based on its composition of labels.
@@ -264,11 +255,13 @@ def get_io_from_myoflex(data_dir: Path) -> tuple[Input, Output]:
         return labels[-1]
 
     window_labels = [classify_window(window) for window in model_windows]
-    model_desired_output = Output(window_labels)
+    model_desired_output = [Output(label) for label in window_labels]
     return model_input, model_desired_output
 
 
-def get_io_from_our_data(data_dir: Path) -> tuple[Input, Output]:
+def get_io_from_our_data(
+    data_dir: Path,
+) -> tuple[list[Input], list[Output]]:
     data_paths = list(data_dir.rglob("*.csv"))
     print(f"Loading {len(data_paths)} measurement files.")
 
@@ -285,19 +278,19 @@ def get_io_from_our_data(data_dir: Path) -> tuple[Input, Output]:
 
     # Flatten windows so we can train on them in one go.
     model_windows = [item for row in segmented_measurements for item in row]
-    model_input = Input(model_windows)
+    model_input = [Input(window) for window in model_windows]
 
     # FIXME: Since we haven't yet decided exactly how to handle the labeling, we use the
     # label of the last measurement in the window as the desired label.
     window_labels = [window.labels[-1] for window in model_windows]
-    model_desired_output = Output(window_labels)
+    model_desired_output = [Output(label) for label in window_labels]
     return model_input, model_desired_output
 
 
 def get_input_and_output_from_data_files(
     data_dir: Path,
     data_type: DataType,
-) -> tuple[Input, Output]:
+) -> tuple[list[Input], list[Output]]:
     if data_type == DataType.MYOFLEX:
         return get_io_from_myoflex(data_dir)
 

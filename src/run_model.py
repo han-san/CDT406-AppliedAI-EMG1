@@ -12,8 +12,8 @@ from data import Input, Output, State
 def load_and_run_tflite(
     interpreter: Any,  # Either tf.lite.Interpreter or tflite.interpreter.
     model_path: Path,
-    model_input: Input,
-    expected_output: Output,
+    model_input: list[Input],
+    expected_output: list[Output],
 ) -> None:
     """Test the accuracy of the model."""
     # Load the model using TFLite/LiteRT.
@@ -31,11 +31,10 @@ def load_and_run_tflite(
 
     predictions = []
     for i, (in_window, out) in enumerate(
-        zip(model_input.input, expected_output.output),
+        zip(model_input, expected_output),
     ):
         start = time.perf_counter()
-        input_data = in_window
-        input_data = input_data.reshape(input_shape)
+        input_data = in_window.input.reshape(input_shape)
         interpreter.set_tensor(input_details[0]["index"], input_data)
 
         interpreter.invoke()
@@ -54,7 +53,7 @@ def load_and_run_tflite(
         target_col = "\033[1;34m"
 
         output_index = np.argmax(output_data[0])
-        target_index = np.argmax(out)
+        target_index = np.argmax(out.output)
         output_colors = ["", "", "", ""]
         target_colors = ["", "", "", ""]
 
@@ -84,7 +83,7 @@ def load_and_run_tflite(
         f"rest: {correct_classifications[0]}({incorrect_classifications[0]})/{total_classifications[0]}, grip: {correct_classifications[1]}({incorrect_classifications[1]})/{total_classifications[1]}, hold: {correct_classifications[2]}({incorrect_classifications[2]})/{total_classifications[2]}, release: {correct_classifications[3]}({incorrect_classifications[3]})/{total_classifications[3]}"
     )
 
-    a = [np.argmax(v) for v in expected_output.output]
+    a = [np.argmax(v.output) for v in expected_output]
     b = [np.argmax(v) for v in predictions]
 
     cm = confusion_matrix(a, b)

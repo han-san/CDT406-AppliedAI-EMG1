@@ -11,6 +11,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
+import numpy as np
 import tensorflow as tf  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:
@@ -81,8 +82,8 @@ class Model:
 
     def train(
         self,
-        model_input: Input,
-        desired_output: Output,
+        model_input: list[Input],
+        desired_output: list[Output],
         *,
         batch_size: int | None,
         epochs: int,
@@ -102,8 +103,8 @@ class Model:
         )
 
         history = self.model.fit(
-            model_input.input,
-            desired_output.output,
+            np.array([iw.input for iw in model_input], dtype=np.float32),
+            np.array([ow.output for ow in desired_output], dtype=np.float32),
             batch_size=batch_size,
             validation_split=0.2,
             epochs=epochs,
@@ -121,8 +122,9 @@ class Model:
         plt.xlabel("Epoch")
         plt.show()
 
-    def execute(self, model_input: Input) -> Output:
+    def execute(self, model_input: list[Input]) -> Output:
         """Return the output of the model using the provided input."""
-        return self.model.predict(model_input.input)
+        inp = np.array([iw.input for iw in model_input], dtype=np.float32)
+        return self.model.predict(inp)
 
     model: tf.keras.Model
