@@ -1,8 +1,4 @@
-
-import numpy
 import numpy as np
-import pandas as pd
-from enum import Enum
 
 
 def calculate_moving_average(x):
