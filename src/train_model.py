@@ -10,13 +10,16 @@ from data import (
     Output,
     State,
     channel_count,
-    get_input_and_output_from_data_files,
 )
+
+from dataset_loading import get_input_and_output_from_data_files
+
 from model import (
     Model,
     timestep_window_size,
 )
-from run_model import load_and_run_tflite
+from run_model import run_metrics_on_tflite_model
+from tflite_model import TFLiteModel
 
 
 if len(sys.argv) != 3:
@@ -35,9 +38,10 @@ model_input, model_desired_output = get_input_and_output_from_data_files(
 
 if model_path.exists():
     # FIXME(Johan): Use validation set to test.
-    load_and_run_tflite(
-        tf.lite.Interpreter,
-        model_path,
+    model = TFLiteModel(tf.lite.Interpreter, model_path)
+
+    run_metrics_on_tflite_model(
+        model,
         model_input,
         model_desired_output,
     )
@@ -81,7 +85,7 @@ def limit_training_data(
 
     longest_transient = max(len(grip_inputs), len(release_inputs))
 
-    new_input = np.concat(
+    new_input = np.concatenate(
         (
             rest_inputs[:longest_transient],
             grip_inputs[:longest_transient],
@@ -89,7 +93,7 @@ def limit_training_data(
             release_inputs[:longest_transient],
         ),
     )
-    new_output = np.concat(
+    new_output = np.concatenate(
         (
             rest_outputs[:longest_transient],
             grip_outputs[:longest_transient],
