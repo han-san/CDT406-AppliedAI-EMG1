@@ -11,7 +11,7 @@ class MovingAverageType(Enum):
     EMA = 1
 
 
-def calculate_moving_average(x: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
+def exponential_moving_average(x: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
     """Calculate the exponential moving average of the provided sequence."""
     alpha = 0.1
     ema = np.zeros_like(x)

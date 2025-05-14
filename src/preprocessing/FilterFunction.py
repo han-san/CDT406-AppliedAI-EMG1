@@ -8,7 +8,7 @@ from scipy.signal import sosfiltfilt  # type: ignore[import-untyped]
 
 from preprocessing.Moving_average_filter import (
     MovingAverageType,
-    calculate_moving_average,
+    exponential_moving_average,
     simple_moving_average,
 )
 
@@ -288,7 +288,7 @@ def filter_function(
         data_array = np.abs(filtered_data_array)
 
     if moving_average_type == MovingAverageType.EMA:
-        data_array = calculate_moving_average(data_array)
+        data_array = exponential_moving_average(data_array)
     elif moving_average_type == MovingAverageType.SMA:
         data_array = simple_moving_average(data_array)
     elif moving_average_type is None:
