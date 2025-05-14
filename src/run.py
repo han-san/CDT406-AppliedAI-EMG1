@@ -4,7 +4,8 @@ from pathlib import Path
 import tflite_runtime.interpreter as tflite
 
 from data import DataType, get_input_and_output_from_data_files
-from run_model import load_and_run_tflite
+from run_model import run_metrics_on_tflite_model
+from tflite_model import TFLiteModel
 
 model_path = Path("../model/model.tflite")
 
@@ -15,4 +16,5 @@ model_input, model_desired_output = get_input_and_output_from_data_files(
     data_dir,
     DataType.OURS,
 )
-load_and_run_tflite(tflite.Interpreter, model_path, model_input, model_desired_output)
+model = TFLiteModel(tflite.Interpreter, model_path)
+run_metrics_on_tflite_model(model, model_input, model_desired_output)

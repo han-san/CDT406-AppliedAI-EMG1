@@ -8,7 +8,7 @@ from data import Input, Output
 from tflite_model import TFLiteModel
 
 
-def load_and_run_tflite(
+def run_metrics_on_tflite_model(
     model: TFLiteModel,
     model_input: list[Input],
     expected_output: list[Output],
