@@ -6,15 +6,6 @@ from scipy.signal import sosfiltfilt
 from preprocessing.Moving_average_filter import calculate_moving_average
 
 
-class filter(Enum):
-    """
-    Enum class for filter options.
-    """
-
-    NO_FILTER = 0
-    FILTER = 1
-
-
 class filter_type(Enum):
     """
     Enum class for filter types.
@@ -37,6 +28,7 @@ class normalization_type(Enum):
 
 def filter_function(
     data_array,
+    *,
     filter=0,
     filter_type=None,
     normalization_type=None,
