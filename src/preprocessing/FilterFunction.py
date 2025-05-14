@@ -305,10 +305,15 @@ def filter_function(
         data_array = (data_array - np.mean(data_array)) / np.std(
             data_array
         )
-    else:
+    elif normalization_type == NormalizationType.MIN_MAX:
         # min-max normalization
         data_array = (data_array - np.min(data_array)) / (
             np.max(data_array) - np.min(data_array)
         )
+    elif normalization_type is None:
+        pass
+    else:
+        err = f"Invalid normalization type [{normalization_type}]."
+        raise ValueError(err)
 
     return data_array
