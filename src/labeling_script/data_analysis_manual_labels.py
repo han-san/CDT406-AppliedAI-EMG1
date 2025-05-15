@@ -17,7 +17,7 @@ labels_map = {0: 'rest', 1: 'grip', 2: 'hold', 3: 'release', 4: 'rest_anomaly'}
 label_colors = {0: 'purple', 1: 'green', 2: 'orange', 3: 'pink', 4: 'red'}
 
 # === HARDCODED SAVE DIRECTORY ===
-save_dir = r"C:\Users\Samsung\Desktop\Python_project_CDT406\Manual_labels"
+save_dir = "./manual_labeling"
 os.makedirs(save_dir, exist_ok=True)
 
 # === SELECT DATASET FOLDER ===
