@@ -1,5 +1,7 @@
+from enum import Enum
 from pathlib import Path
 
+import numpy as np
 import pandas as pd  # type: ignore[import-untyped]
 
 from data import (
@@ -59,6 +61,72 @@ def load_data_files(filepaths: list[Path], data_type: DataType) -> list[Data]:
     return [load_data_file(path, data_type) for path in filepaths]
 
 
+class ClassificationMethod(Enum):
+    """The method used for classifying a window of training data."""
+
+    TWENTY_PERCENT_EDGE_TRANSIENT = 0
+    PROPORTIONAL = 1
+
+
+def classify_window(
+    window: LabeledWindow, classification_method: ClassificationMethod
+) -> State:
+    """Classify the window based on its composition of labels.
+
+    The classification is based on how many consecutive labels are found at the end
+    of the window. If the last 20% of the window contains only labels for a
+    transient state, the window gets labeled as that transient state. Otherwise, if
+    the last 50% of the window gets labeled as a static state, the window gets
+    labeled as that static state.
+
+    This gives a higher priority to transient states when we are moving towards
+    them. In our labeling, we are quite conservative when moving from a transient
+    state to a static state, so we instead
+    """
+    if classification_method == ClassificationMethod.TWENTY_PERCENT_EDGE_TRANSIENT:
+        # FIXME: If a state's window is less than 200ms, you might have both edges be
+        # two different states while the majority of the window is a third state.
+        labels = window.labels
+        mid_label = labels[len(labels) // 2]
+        last_twenty = labels[-len(labels) // 2 :]
+        first_twenty = labels[: len(labels) // 2]
+
+        # If our window contains a whole transient sequence, such that the edges of the
+        # window are static states, we label it as the transient state.
+        # NOTE: For this we assume that a transient sequence is not shorter than half
+        # the window size.
+        mid_label_is_transient = mid_label in (State.GRIP, State.RELEASE)
+        edge_labels_are_not_transient = labels[0] != mid_label and labels[-1] != mid_label
+        if mid_label_is_transient and edge_labels_are_not_transient:
+            return mid_label
+
+        # If the last 20% are all grips/releases, classify the window as grip/release.
+        if last_twenty[-1] in (State.GRIP, State.RELEASE):
+            return last_twenty[0]
+        # If the first 20% are all grips/releases, classify the window as grip/release.
+        if first_twenty[0] in (State.GRIP, State.RELEASE):
+            return first_twenty[-1]
+        # If there are no transient states at front or back of window, it should contain
+        # only one static state, so we just return the latest label.
+        return labels[-1]
+
+    # FIXME: This doesn't work as long as we return a State value, since proportional
+    # values won't be valid States.
+    if classification_method == ClassificationMethod.PROPORTIONAL:
+        labels = np.array(window.labels)
+        rests = np.count_nonzero(labels == State.REST)
+        grips = np.count_nonzero(labels == State.GRIP)
+        holds = np.count_nonzero(labels == State.HOLD)
+        releases = np.count_nonzero(labels == State.RELEASE)
+        total = len(window.labels)
+        ret = (rests / total, grips / total, holds / total, releases / total)
+
+        return State(ret)
+
+    err = f"Invalid classification method [{classification_method}]"
+    raise ValueError(err)
+
+
 def get_io_from_myoflex(data_dir: Path) -> tuple[list[Input], list[Output]]:
     """Load the input and output data from files in the provided directory."""
     # https://www.nature.com/articles/s41597-023-02223-x
@@ -99,36 +167,10 @@ def get_io_from_myoflex(data_dir: Path) -> tuple[list[Input], list[Output]]:
     model_windows = [item for row in segmented_measurements for item in row]
     model_input = [Input(window.window) for window in model_windows]
 
-    def classify_window(window: LabeledWindow) -> State:
-        """Classify the window based on its composition of labels.
-
-        The classification is based on how many consecutive labels are found at the end
-        of the window. If the last 20% of the window contains only labels for a
-        transient state, the window gets labeled as that transient state. Otherwise, if
-        the last 50% of the window gets labeled as a static state, the window gets
-        labeled as that static state.
-
-        This gives a higher priority to transient states when we are moving towards
-        them. In our labeling, we are quite conservative when moving from a transient
-        state to a static state, so we instead
-        """
-        labels = window.labels
-        last_twenty = labels[-len(labels) // 2 :]
-        first_twenty = labels[: len(labels) // 2]
-        # We assume that labeling is consecutive; moves in order rest, grip, hold,
-        # release, rest; and windows will never contain more than 2 types of labels.
-
-        # If the last 20% are all grips/releases, classify the window as grip/release.
-        if last_twenty[-1] in (State.GRIP, State.RELEASE):
-            return last_twenty[0]
-        # If the first 20% are all grips/releases, classify the window as grip/release.
-        if first_twenty[0] in (State.GRIP, State.RELEASE):
-            return first_twenty[-1]
-        # If there are no transient states at front or back of window, it should contain
-        # only one static state, so we just the latest label.
-        return labels[-1]
-
-    window_labels = [classify_window(window) for window in model_windows]
+    window_labels = [
+        classify_window(window, ClassificationMethod.TWENTY_PERCENT_EDGE_TRANSIENT)
+        for window in model_windows
+    ]
     model_desired_output = [Output(label) for label in window_labels]
     return model_input, model_desired_output
 
@@ -154,9 +196,10 @@ def get_io_from_our_data(
     model_windows = [item for row in segmented_measurements for item in row]
     model_input = [Input(window.window) for window in model_windows]
 
-    # FIXME: Since we haven't yet decided exactly how to handle the labeling, we use the
-    # label of the last measurement in the window as the desired label.
-    window_labels = [window.labels[-1] for window in model_windows]
+    window_labels = [
+        classify_window(window, ClassificationMethod.TWENTY_PERCENT_EDGE_TRANSIENT)
+        for window in model_windows
+    ]
     model_desired_output = [Output(label) for label in window_labels]
     return model_input, model_desired_output
 
