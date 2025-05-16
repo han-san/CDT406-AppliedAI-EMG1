@@ -39,6 +39,9 @@ def to_state(i: int) -> State:
         return State.HOLD
     if i == 3:
         return State.RELEASE
+    if i == 4:
+        # This is a label for rest anomalies, but for now we just treat them as rest.
+        return State.REST
     err = ValueError("Invalid State int representation passed as argument.")
     raise err
 
