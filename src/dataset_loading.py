@@ -37,8 +37,8 @@ def load_myoflex_data_file(filepath: Path) -> Data:
 
 def load_our_data_file(filepath: Path) -> Data:
     """Read the data from our data file."""
-    readings = pd.read_csv(filepath, index_col=0, names=["time", "voltage", "label"])
-    voltages = readings["voltage"]
+    readings = pd.read_csv(filepath, index_col=0, header=0)
+    voltages = readings["measurement"]
 
     labels = [to_state(label) for label in readings["label"]]
 
