@@ -5,9 +5,8 @@ Provides the functionality needed to create, train, and execute our AI model.
 
 from __future__ import annotations
 
-import datetime
-import sys
 from enum import Enum
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
@@ -84,6 +83,7 @@ class Model:
         self,
         model_input: list[Input],
         desired_output: list[Output],
+        model_name: str,
         *,
         batch_size: int | None,
         epochs: int,
@@ -92,11 +92,7 @@ class Model:
         # TODO(johan): We want to split input into validation/testing sets.
         print("Starting training!")
 
-        log_dir = (
-            "../logs/fit/"
-            + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-            + f"-{sys.argv[2]}"
-        )
+        log_dir = Path("../logs/fit/") / model_name
         tensorboard_callback = tf.keras.callbacks.TensorBoard(
             log_dir=log_dir,
             histogram_freq=1,

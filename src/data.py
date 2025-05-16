@@ -52,14 +52,17 @@ class Window:
     def __init__(
         self,
         window: npt.NDArray[np.float32],
+        filter_type: FilterType,
+        normalization_type: NormalizationType,
+        moving_average_type: MovingAverageType,
     ) -> None:
         """Construct a window of data."""
         self.window = np.array(
             filter_function(
                 window,
-                filter_type=FilterType.RANGE_20_TO_500_BUTTER,
-                normalization_type=NormalizationType.MIN_MAX,
-                moving_average_type=MovingAverageType.EMA,
+                filter_type=filter_type,
+                normalization_type=normalization_type,
+                moving_average_type=moving_average_type,
             ),
             dtype=np.float32,
         )
@@ -112,6 +115,9 @@ class Data:
 
 def create_windows(
     data: Data,
+    filter_type: FilterType,
+    normalization_type: NormalizationType,
+    moving_average_type: MovingAverageType,
     *,
     window_size: int,
     overlap: int,
@@ -133,7 +139,15 @@ def create_windows(
     ]
 
     return [
-        LabeledWindow(Window(np.array(window)), labels)
+        LabeledWindow(
+            Window(
+                np.array(window),
+                filter_type,
+                normalization_type,
+                moving_average_type,
+            ),
+            labels,
+        )
         for window, labels in zip(data_windows, label_windows)
     ]
 
