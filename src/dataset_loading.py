@@ -41,7 +41,7 @@ def load_our_data_file(filepath: Path) -> Data:
 
     labels = [to_state(label) for label in readings["label"]]
 
-    return Data(voltages.to_numpy(), labels)
+    return Data(voltages.to_list(), labels)
 
 
 def load_data_file(filepath: Path, data_type: DataType) -> Data:
