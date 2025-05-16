@@ -73,42 +73,64 @@ def classify_window(
 ) -> State:
     """Classify the window based on its composition of labels.
 
-    The classification is based on how many consecutive labels are found at the end
-    of the window. If the last 20% of the window contains only labels for a
-    transient state, the window gets labeled as that transient state. Otherwise, if
-    the last 50% of the window gets labeled as a static state, the window gets
-    labeled as that static state.
+    There are multiple aspects to the classification. We assume that a window cannot
+    contain both transient states at the same time (the static states should be held for
+    longer than 200ms). We also assume that a window can't contain both static states at
+    the same time if there is no transient state.
 
-    This gives a higher priority to transient states when we are moving towards
-    them. In our labeling, we are quite conservative when moving from a transient
-    state to a static state, so we instead
+    1. If there are no transient states in the window, it should be entirely one static
+    state and should be labeled as such.
+
+    2. If an entire sequence of a transient state is in the window (meaning the first
+    and last measurements aren't of the transient state, but there is a transient
+    state), it should be labeled as that transient state.
+
+    3. If the last 20% of the labels are of a transient state, the window should be
+    labeled as that state. Otherwise, if the first 20% of the labels are of a transient
+    state, it should be labeled as that state. Otherwise, the latest non-transient state
+    should be the label.
+
+    This gives a higher priority to the transient states when we are moving towards
+    them.
     """
     if classification_method == ClassificationMethod.TWENTY_PERCENT_EDGE_TRANSIENT:
-        # FIXME: If a state's window is less than 200ms, you might have both edges be
-        # two different states while the majority of the window is a third state.
         labels = window.labels
-        mid_label = labels[len(labels) // 2]
-        last_twenty = labels[-len(labels) // 2 :]
-        first_twenty = labels[: len(labels) // 2]
 
-        # If our window contains a whole transient sequence, such that the edges of the
-        # window are static states, we label it as the transient state.
-        # NOTE: For this we assume that a transient sequence is not shorter than half
-        # the window size.
-        mid_label_is_transient = mid_label in (State.GRIP, State.RELEASE)
-        edge_labels_are_not_transient = labels[0] != mid_label and labels[-1] != mid_label
-        if mid_label_is_transient and edge_labels_are_not_transient:
-            return mid_label
+        grip_in_window = State.GRIP in window.labels
+        release_in_window = State.RELEASE in window.labels
+        transient_state_in_window = grip_in_window or release_in_window
+        # We shouldn't have both transient states in one window. Rests and holds should
+        # continue for a while.
+        assert not (grip_in_window and release_in_window)
+        if not transient_state_in_window:
+            # If there isn't a transient state in the window, it should be entirely one
+            # static state.
+            assert all(x == labels[0] for x in labels)
+            return labels[-1]
 
+        transient_state = State.GRIP if grip_in_window else State.RELEASE
+        edge_labels_are_not_transient = (
+            labels[0] != transient_state and labels[-1] != transient_state
+        )
+        if edge_labels_are_not_transient:
+            # The entire transient state sequence must be in the window, so we treat
+            # it as a transient state.
+            return transient_state
+
+        last_twenty = labels[-len(labels) // 5 :]
+        first_twenty = labels[: len(labels) // 5]
         # If the last 20% are all grips/releases, classify the window as grip/release.
-        if last_twenty[-1] in (State.GRIP, State.RELEASE):
+        if all(x == transient_state for x in last_twenty):
             return last_twenty[0]
+
         # If the first 20% are all grips/releases, classify the window as grip/release.
-        if first_twenty[0] in (State.GRIP, State.RELEASE):
-            return first_twenty[-1]
-        # If there are no transient states at front or back of window, it should contain
-        # only one static state, so we just return the latest label.
-        return labels[-1]
+        if all(x == transient_state for x in first_twenty):
+            return last_twenty[0]
+
+        # The first of the last twenty labels is guaranteed to be the latest static
+        # state at this point, so that becomes the label for the window.
+        assert last_twenty[0] != transient_state
+        return last_twenty[0]
 
     # FIXME: This doesn't work as long as we return a State value, since proportional
     # values won't be valid States.
