@@ -1,6 +1,5 @@
 import iio
 import signal
-import time
 
 dev_name = 'TI-am335x-adc.0.auto'
 channel = 0
@@ -18,14 +17,16 @@ buffer = iio.Buffer(dev, buffer_size)
 
 f = open(pipe, "wb")
 
-def sig_handler(signal, stack):
-	print("Handling SIGTERM")
+def exit_gracefully():
 	f.close()
 	dev.channels[channel].enabled = False
 	exit(0)
 
+def sig_handler(signal, stack):
+	print("Handling SIGTERM")
+	exit_gracefully()
+
 def read_adc(f, buffer):
-	time.sleep(1)
 	while True:
 		num_samples = buffer_size * 2
 		readings = bytearray()
@@ -34,8 +35,11 @@ def read_adc(f, buffer):
 			samples = buffer.read()
 			readings.extend(samples)
 			num_samples -= min(num_samples, len(samples))
-
-		f.write(readings)
+		try:
+			f.write(readings)
+		except IOError:
+			dev.channels[channel].enabled = False
+			exit(0)
 
 signal.signal(signal.SIGTERM, sig_handler)
 

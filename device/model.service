@@ -1,13 +1,13 @@
 [Unit]
 
 # Human readable name of the unit
-Description=Continious reading of ADC values
+Description=Continous inference based on ADC data
 
 
 [Service]
 
 # Command to execute when the service is started
-ExecStart=/usr/bin/python3 /home/EMG1/setup/adc.py
+ExecStart=/usr/bin/python3 /home/EMG1/setup/src/run_on_device.py /home/EMG1/setup/model.tflite
 
 # Disable Python's buffering of STDOUT and STDERR, so that output from the
 # service shows up immediately in systemd's logs
@@ -20,7 +20,7 @@ Environment=PYTHONUNBUFFERED=1
 Type=simple
 
 # Use a dedicated user to run our service
-#User=root
+#User=EMG1
 
 
 #[Install]
