@@ -1,7 +1,6 @@
 from enum import Enum
 from pathlib import Path
 
-import numpy as np
 import pandas as pd  # type: ignore[import-untyped]
 
 from data import (
@@ -131,19 +130,6 @@ def classify_window(
         # state at this point, so that becomes the label for the window.
         assert last_twenty[0] != transient_state
         return last_twenty[0]
-
-    # FIXME: This doesn't work as long as we return a State value, since proportional
-    # values won't be valid States.
-    if classification_method == ClassificationMethod.PROPORTIONAL:
-        labels = np.array(window.labels)
-        rests = np.count_nonzero(labels == State.REST)
-        grips = np.count_nonzero(labels == State.GRIP)
-        holds = np.count_nonzero(labels == State.HOLD)
-        releases = np.count_nonzero(labels == State.RELEASE)
-        total = len(window.labels)
-        ret = (rests / total, grips / total, holds / total, releases / total)
-
-        return State(ret)
 
     err = f"Invalid classification method [{classification_method}]"
     raise ValueError(err)
