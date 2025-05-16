@@ -35,7 +35,7 @@ def run_metrics_on_tflite_model(
 
         target_col = "\033[1;34m"
 
-        output_index = np.argmax(output_data[0])
+        output_index = np.argmax(output_data)
         target_index = np.argmax(out.output)
         output_colors = ["", "", "", ""]
         target_colors = ["", "", "", ""]
