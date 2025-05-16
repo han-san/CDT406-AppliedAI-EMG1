@@ -1,3 +1,5 @@
+import argparse
+import datetime
 import sys
 from pathlib import Path
 
@@ -11,30 +13,76 @@ from data import (
     State,
     channel_count,
 )
-
 from dataset_loading import get_input_and_output_from_data_files
-
 from model import (
     Model,
     timestep_window_size,
 )
+from preprocessing.FilterFunction import FilterType, NormalizationType
+from preprocessing.Moving_average_filter import MovingAverageType
 from run_model import run_metrics_on_tflite_model
 from tflite_model import TFLiteModel
 
+filter_names = ["20to125", "125to250", "20to250", "20to500"]
+normalization_names = ["minmax", "zscore"]
+moving_average_names = ["sma", "ema"]
+parser = argparse.ArgumentParser()
+parser.add_argument("-f", "--filter", required=True, choices=filter_names)
+parser.add_argument(
+    "-n",
+    "--normalization",
+    required=True,
+    choices=normalization_names,
+)
 
-if len(sys.argv) != 3:
-    print("Usage: train_model.py [dataset_dir] [execution_name_tag]")
-    sys.exit(1)
+parser.add_argument(
+    "-ma",
+    "--movingaverage",
+    required=True,
+    choices=moving_average_names,
+)
 
-model_path = Path(f"../model/model-{sys.argv[2]}.tflite")
+parser.add_argument("-eq", "--equalize", action="store_true")
+parser.add_argument("-d", "--datadir", required=True, type=Path)
+parser.add_argument("-m", "--modelsavedir", required=True, type=Path)
+parser.add_argument("-p", "--prefix")
 
-data_dir = Path(sys.argv[1])
-assert data_dir.is_dir()
+args = parser.parse_args()
+
+
+class Config:
+    filter: FilterType
+    normalization: NormalizationType
+    moving_average: MovingAverageType
+    equalize_training_data: bool
+    data_dir: Path
+    model_dir: Path
+
+
+config = Config()
+config.filter = FilterType(filter_names.index(args.filter))
+config.normalization = NormalizationType(normalization_names.index(args.normalization))
+config.moving_average = MovingAverageType(
+    moving_average_names.index(args.movingaverage)
+)
+config.equalize_training_data = args.equalize
+config.data_dir = args.datadir
+config.model_dir = args.modelsavedir
+
+assert config.data_dir.is_dir()
 
 model_input, model_desired_output = get_input_and_output_from_data_files(
-    data_dir,
+    config.data_dir,
     DataType.OURS,
+    config.filter,
+    config.normalization,
+    config.moving_average,
 )
+
+eq_name = "eq" if config.equalize_training_data else "noeq"
+current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+model_name = f"{current_time}-model-{args.prefix}-{eq_name}-{args.filter}-{args.normalization}-{args.movingaverage}"
+model_path = config.model_dir / f"{model_name}.tflite"
 
 if model_path.exists():
     # FIXME(Johan): Use validation set to test.
@@ -45,7 +93,7 @@ if model_path.exists():
         model_input,
         model_desired_output,
     )
-    exit()
+    sys.exit()
 
 
 def limit_training_data(
@@ -112,11 +160,12 @@ def limit_training_data(
         dest_out.output = src_out
 
 
-limit_training_data(model_input, model_desired_output)
+if config.equalize_training_data:
+    limit_training_data(model_input, model_desired_output)
 
 model = Model(Model.Type.LSTM, timestep_window_size, channel_count)
 # FIXME: Figure out what batch_size we should have.
-model.train(model_input, model_desired_output, batch_size=64, epochs=1000)
+model.train(model_input, model_desired_output, model_name, batch_size=64, epochs=1000)
 
 print(model.model.summary())
 print(f"input shape: {model.model.input_shape}")

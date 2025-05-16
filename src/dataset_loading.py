@@ -13,6 +13,8 @@ from data import (
     create_windows,
     to_state,
 )
+from preprocessing.FilterFunction import FilterType, NormalizationType
+from preprocessing.Moving_average_filter import MovingAverageType
 
 
 def load_myoflex_data_file(filepath: Path) -> Data:
@@ -185,6 +187,9 @@ def get_io_from_myoflex(data_dir: Path) -> tuple[list[Input], list[Output]]:
 
 def get_io_from_our_data(
     data_dir: Path,
+    filter_type: FilterType,
+    normalization_type: NormalizationType,
+    moving_average_type: MovingAverageType,
 ) -> tuple[list[Input], list[Output]]:
     data_paths = list(data_dir.rglob("*.csv"))
     print(f"Loading {len(data_paths)} measurement files.")
@@ -196,7 +201,14 @@ def get_io_from_our_data(
     sample_ratio = sample_rate // ms
 
     segmented_measurements = [
-        create_windows(data, window_size=200 * sample_ratio, overlap=50 * sample_ratio)
+        create_windows(
+            data,
+            filter_type,
+            normalization_type,
+            moving_average_type,
+            window_size=200 * sample_ratio,
+            overlap=50 * sample_ratio,
+        )
         for data in data_measurements
     ]
 
@@ -215,12 +227,17 @@ def get_io_from_our_data(
 def get_input_and_output_from_data_files(
     data_dir: Path,
     data_type: DataType,
+    filter_type: FilterType,
+    normalization_type: NormalizationType,
+    moving_average_type: MovingAverageType,
 ) -> tuple[list[Input], list[Output]]:
     if data_type == DataType.MYOFLEX:
         return get_io_from_myoflex(data_dir)
 
     if data_type == DataType.OURS:
-        return get_io_from_our_data(data_dir)
+        return get_io_from_our_data(
+            data_dir, filter_type, normalization_type, moving_average_type
+        )
 
     err = ValueError("DataType variable contains invalid enum type.")
     raise err
