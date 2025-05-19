@@ -86,6 +86,7 @@ class Model:
                     tf.keras.metrics.FalseNegatives(),
                 ],
             )
+
         else:
             msg = f"Trying to construct model with invalid enum value {model_type}"
             raise ValueError(msg)
