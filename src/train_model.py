@@ -1,6 +1,5 @@
 import argparse
 import datetime
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -20,8 +19,6 @@ from model import (
 )
 from preprocessing.FilterFunction import FilterType, NormalizationType
 from preprocessing.Moving_average_filter import MovingAverageType
-from run_model import run_metrics_on_tflite_model
-from tflite_model import TFLiteModel
 
 filter_names = ["20to125", "125to250", "20to250", "20to500"]
 normalization_names = ["minmax", "zscore"]
