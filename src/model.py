@@ -33,7 +33,13 @@ class Model:
 
         LSTM = 0
 
-    def __init__(self, model_type: Type, timesteps: int, samples: int) -> None:
+    def __init__(
+        self,
+        model_type: Type,
+        timesteps: int,
+        samples: int,
+        training_data_bias: list[float] | None = None,
+    ) -> None:
         """Construct the AI model."""
         if model_type == Model.Type.LSTM:
             # Create the same type of model as in https://doi.org/10.3390/app12199700.
@@ -44,6 +50,10 @@ class Model:
             # using the tflite-runtime. Otherwise the model contains the OP
             # "FlexTensorListReserve" which is only available in the regular tensorflow
             # package.
+
+            bias_initializer: tf.keras.initializers.Constant | None = None
+            if training_data_bias is not None:
+                bias_initializer = tf.keras.initializers.Constant(training_data_bias)
             self.model = tf.keras.models.Sequential(
                 [
                     tf.keras.Input(shape=(timesteps, samples)),
@@ -59,6 +69,7 @@ class Model:
                     tf.keras.layers.Dense(
                         units=4,
                         activation=tf.keras.activations.softmax,
+                        bias_initializer=bias_initializer,
                     ),
                 ],
             )
@@ -87,6 +98,7 @@ class Model:
         *,
         batch_size: int | None,
         epochs: int,
+        class_weight: dict[int, float] | None = None,
     ) -> None:
         """Train the model using the provided input for some number of epochs."""
         # TODO(johan): We want to split input into validation/testing sets.
@@ -120,6 +132,7 @@ class Model:
             epochs=epochs,
             callbacks=[tensorboard_callback, checkpoint_callback],
             verbose=2,
+            class_weight=class_weight,
         )
         print("Finished training!")
         print(history.history)
