@@ -149,9 +149,61 @@ def limit_training_data(
 if config.equalize_training_data:
     limit_training_data(model_input, model_desired_output)
 
-model = Model(Model.Type.LSTM, timestep_window_size, channel_count)
+rest_condition = [
+    np.all(output.output == State.REST.value) for output in model_desired_output
+]
+grip_condition = [
+    np.all(output.output == State.GRIP.value) for output in model_desired_output
+]
+hold_condition = [
+    np.all(output.output == State.HOLD.value) for output in model_desired_output
+]
+release_condition = [
+    np.all(output.output == State.RELEASE.value) for output in model_desired_output
+]
+rest_count = np.count_nonzero(rest_condition)
+grip_count = np.count_nonzero(grip_condition)
+hold_count = np.count_nonzero(hold_condition)
+release_count = np.count_nonzero(release_condition)
+total_count = rest_count + grip_count + hold_count + release_count
+assert total_count == len(model_desired_output)
+
+# FIXME: This is probably an incorrect way of calculating the bias.
+# Taken from https://www.tensorflow.org/tutorials/structured_data/imbalanced_data#optional_set_the_correct_initial_bias,
+# but the example is a binary classification whereas we have multiple classes.
+bias = np.log(
+    [
+        rest_count / (grip_count + hold_count + release_count),
+        grip_count / (rest_count + hold_count + release_count),
+        hold_count / (rest_count + grip_count + release_count),
+        release_count / (rest_count + grip_count + hold_count),
+    ],
+)
+
+# Give higher weight to less frequent classes.
+# From: https://www.tensorflow.org/tutorials/structured_data/imbalanced_data#calculate_class_weights
+weights = {
+    0: (1 / rest_count) * (total_count / 2.0),
+    1: (1 / grip_count) * (total_count / 2.0),
+    2: (1 / hold_count) * (total_count / 2.0),
+    3: (1 / release_count) * (total_count / 2.0),
+}
+
+model = Model(
+    Model.Type.LSTM,
+    timestep_window_size,
+    channel_count,
+    training_data_bias=None,
+)
 # FIXME: Figure out what batch_size we should have.
-model.train(model_input, model_desired_output, model_name, batch_size=64, epochs=1000)
+model.train(
+    model_input,
+    model_desired_output,
+    model_name,
+    batch_size=64,
+    epochs=2000,
+    class_weight=None,
+)
 
 print(model.model.summary())
 print(f"input shape: {model.model.input_shape}")
