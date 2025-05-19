@@ -103,7 +103,6 @@ class Model:
         class_weight: dict[int, float] | None = None,
     ) -> None:
         """Train the model using the provided input for some number of epochs."""
-        # TODO(johan): We want to split input into validation/testing sets.
         print("Starting training!")
 
         log_dir = Path("../logs/fit/") / model_name

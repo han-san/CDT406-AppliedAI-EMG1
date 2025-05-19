@@ -70,7 +70,8 @@ class ClassificationMethod(Enum):
 
 
 def classify_window(
-    window: LabeledWindow, classification_method: ClassificationMethod
+    window: LabeledWindow,
+    classification_method: ClassificationMethod,
 ) -> State:
     """Classify the window based on its composition of labels.
 

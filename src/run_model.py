@@ -61,7 +61,7 @@ def run_metrics_on_tflite_model(
 
     print()
     print(
-        f"rest: {correct_classifications[0]}({incorrect_classifications[0]})/{total_classifications[0]}, grip: {correct_classifications[1]}({incorrect_classifications[1]})/{total_classifications[1]}, hold: {correct_classifications[2]}({incorrect_classifications[2]})/{total_classifications[2]}, release: {correct_classifications[3]}({incorrect_classifications[3]})/{total_classifications[3]}"
+        f"rest: {correct_classifications[0]}({incorrect_classifications[0]})/{total_classifications[0]}, grip: {correct_classifications[1]}({incorrect_classifications[1]})/{total_classifications[1]}, hold: {correct_classifications[2]}({incorrect_classifications[2]})/{total_classifications[2]}, release: {correct_classifications[3]}({incorrect_classifications[3]})/{total_classifications[3]}",
     )
 
     a = [np.argmax(v.output) for v in expected_output]
