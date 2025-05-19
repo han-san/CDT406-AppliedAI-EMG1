@@ -60,7 +60,7 @@ config = Config()
 config.filter = FilterType(filter_names.index(args.filter))
 config.normalization = NormalizationType(normalization_names.index(args.normalization))
 config.moving_average = MovingAverageType(
-    moving_average_names.index(args.movingaverage)
+    moving_average_names.index(args.movingaverage),
 )
 config.equalize_training_data = args.equalize
 config.data_dir = args.datadir

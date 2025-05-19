@@ -116,9 +116,7 @@ def create_windows(
     overlap: int,
 ) -> list[LabeledWindow]:
     """Split measurements into multiple windows."""
-    # TODO(johan): Decide what to do with the last window if it is < windowSize.
-    #   - ignore?
-    #   - use average of all measurements (a group from previous years did this)?
+    # TODO(johan): Allow doing no overlap.
     data_windows = np.lib.stride_tricks.sliding_window_view(data._data, window_size)[
         :: window_size - overlap,
         :,
