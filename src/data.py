@@ -98,13 +98,6 @@ class Data:
         self._data = np.array(data, dtype=np.float32)
         self._labels = labels
 
-    def window(self, begin: int, end: int) -> LabeledWindow:
-        """Return a window of the data, from begin to end."""
-        return LabeledWindow(
-            Window(self._data[begin:end]),
-            self._labels[begin:end],
-        )
-
     def __len__(self) -> int:
         """Return the number of measurements in the data."""
         return len(self._data)
