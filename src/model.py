@@ -97,6 +97,20 @@ class Model:
             log_dir=log_dir,
             histogram_freq=1,
         )
+        checkpoint_dir = (
+            Path("../checkpoints")
+            / f"{model_name}-epoch_{{epoch}}-f1_{{val_f1_score:.2f}}.keras"
+        )
+
+        # We make sure to save the best model.
+        checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+            filepath=checkpoint_dir,
+            monitor="val_f1_score",
+            save_best_only=True,
+            mode="max",
+            initial_value_threshold=0.45,
+            verbose=1,
+        )
 
         history = self.model.fit(
             np.array([iw.input for iw in model_input], dtype=np.float32),
@@ -104,7 +118,7 @@ class Model:
             batch_size=batch_size,
             validation_split=0.2,
             epochs=epochs,
-            callbacks=[tensorboard_callback],
+            callbacks=[tensorboard_callback, checkpoint_callback],
             verbose=2,
         )
         print("Finished training!")
