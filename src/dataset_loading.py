@@ -137,7 +137,12 @@ def classify_window(
     raise ValueError(err)
 
 
-def get_io_from_myoflex(data_dir: Path) -> tuple[list[Input], list[Output]]:
+def get_io_from_myoflex(
+    data_dir: Path,
+    filter_type: FilterType,
+    normalization_type: NormalizationType,
+    moving_average_type: MovingAverageType,
+) -> tuple[list[Input], list[Output]]:
     """Load the input and output data from files in the provided directory."""
     # https://www.nature.com/articles/s41597-023-02223-x
     # Format for filenames in wyoflex dataset:
@@ -170,7 +175,15 @@ def get_io_from_myoflex(data_dir: Path) -> tuple[list[Input], list[Output]]:
     data_measurements = load_data_files(data_paths, DataType.MYOFLEX)
 
     segmented_measurements = [
-        create_windows(data, window_size=200, overlap=50) for data in data_measurements
+        create_windows(
+            data,
+            filter_type,
+            normalization_type,
+            moving_average_type,
+            window_size=200,
+            overlap=50,
+        )
+        for data in data_measurements
     ]
 
     # Flatten windows so we can train on them in one go.
@@ -232,11 +245,19 @@ def get_input_and_output_from_data_files(
     moving_average_type: MovingAverageType,
 ) -> tuple[list[Input], list[Output]]:
     if data_type == DataType.MYOFLEX:
-        return get_io_from_myoflex(data_dir)
+        return get_io_from_myoflex(
+            data_dir,
+            filter_type,
+            normalization_type,
+            moving_average_type,
+        )
 
     if data_type == DataType.OURS:
         return get_io_from_our_data(
-            data_dir, filter_type, normalization_type, moving_average_type
+            data_dir,
+            filter_type,
+            normalization_type,
+            moving_average_type,
         )
 
     err = ValueError("DataType variable contains invalid enum type.")
