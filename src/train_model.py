@@ -84,17 +84,6 @@ current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 model_name = f"{current_time}-model-{args.prefix}-{eq_name}-{args.filter}-{args.normalization}-{args.movingaverage}"
 model_path = config.model_dir / f"{model_name}.tflite"
 
-if model_path.exists():
-    # FIXME(Johan): Use validation set to test.
-    model = TFLiteModel(tf.lite.Interpreter, model_path)
-
-    run_metrics_on_tflite_model(
-        model,
-        model_input,
-        model_desired_output,
-    )
-    sys.exit()
-
 
 def limit_training_data(
     train_in: list[Input],
