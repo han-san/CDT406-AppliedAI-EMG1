@@ -38,6 +38,7 @@ class Model:
         model_type: Type,
         timesteps: int,
         samples: int,
+        *,
         training_data_bias: list[float] | None = None,
     ) -> None:
         """Construct the AI model."""
