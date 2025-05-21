@@ -13,6 +13,12 @@ from data import (
     create_windows,
     to_state,
 )
+from model import (
+    measurement_sample_rate,
+    sample_rate,
+    sample_rate_to_ms_ratio,
+    window_size_in_ms,
+)
 from preprocessing.FilterFunction import FilterType, NormalizationType
 from preprocessing.Moving_average_filter import MovingAverageType
 
@@ -175,14 +181,20 @@ def get_io_from_myoflex(
 
     data_measurements = load_data_files(data_paths, DataType.MYOFLEX)
 
+    myoflex_sample_rate = 1000
+
+    assert (myoflex_sample_rate % 1000) == 0
+    sample_ratio = myoflex_sample_rate // 1000
+
     segmented_measurements = [
         create_windows(
             data,
             filter_type,
             normalization_type,
             moving_average_type,
-            window_size=200,
-            overlap=50,
+            downsample_ratio=1,
+            window_size=window_size_in_ms * sample_ratio,
+            overlap=50 * sample_ratio,
         )
         for data in data_measurements
     ]
@@ -210,9 +222,9 @@ def get_io_from_our_data(
 
     data_measurements = load_data_files(data_paths, DataType.OURS)
 
-    sample_rate = 5000
-    ms = 1000
-    sample_ratio = sample_rate // ms
+    # The downsampling should be exact.
+    assert (measurement_sample_rate % sample_rate) == 0
+    downsample_ratio = measurement_sample_rate // sample_rate
 
     segmented_measurements = [
         create_windows(
@@ -220,8 +232,9 @@ def get_io_from_our_data(
             filter_type,
             normalization_type,
             moving_average_type,
-            window_size=200 * sample_ratio,
-            overlap=50 * sample_ratio,
+            downsample_ratio=downsample_ratio,
+            window_size=window_size_in_ms * sample_rate_to_ms_ratio,
+            overlap=50 * sample_rate_to_ms_ratio,
         )
         for data in data_measurements
     ]

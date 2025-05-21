@@ -17,7 +17,10 @@ if TYPE_CHECKING:
     from data import Input, Output
 
 # FIXME: Unify the sample rate variables
-sample_rate = 5000
+measurement_sample_rate = 5000
+# CHANGE THIS VARIABLE TO SET THE SAMPLE RATE. SETTING IT LOWER THAN
+# measurement_sample_rate MEANS THE DATA WILL BE DOWNSAMPLED.
+sample_rate = 1000
 sample_rate_to_ms_ratio = sample_rate // 1000
 window_size_in_ms = 200
 

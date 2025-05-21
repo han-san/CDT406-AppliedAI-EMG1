@@ -112,17 +112,20 @@ def create_windows(
     normalization_type: NormalizationType,
     moving_average_type: MovingAverageType,
     *,
+    downsample_ratio: int,
     window_size: int,
     overlap: int,
 ) -> list[LabeledWindow]:
     """Split measurements into multiple windows."""
     # TODO(johan): Allow doing no overlap.
-    data_windows = np.lib.stride_tricks.sliding_window_view(data._data, window_size)[
+    data_windows = np.lib.stride_tricks.sliding_window_view(
+        data._data[::downsample_ratio], window_size
+    )[
         :: window_size - overlap,
         :,
     ]
     label_value_windows = np.lib.stride_tricks.sliding_window_view(
-        np.array(data._labels),
+        np.array(data._labels)[::downsample_ratio],
         window_size,
     )[:: window_size - overlap, :]
     label_windows = [

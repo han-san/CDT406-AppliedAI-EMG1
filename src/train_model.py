@@ -195,6 +195,7 @@ model = Model(
     channel_count,
     training_data_bias=None,
 )
+print(model.model.summary())
 # FIXME: Figure out what batch_size we should have.
 model.train(
     model_input,
