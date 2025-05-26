@@ -1,7 +1,10 @@
 import sys
 from pathlib import Path
 
+import matplotlib.pyplot as plt
+import numpy.typing as npt
 import tensorflow as tf  # type: ignore[import-untyped]
+from sklearn.metrics import ConfusionMatrixDisplay  # type: ignore[import-untyped]
 
 from data import DataType
 from dataset_loading import get_input_and_output_from_data_files
@@ -13,7 +16,18 @@ from tflite_model import TFLiteModel
 if len(sys.argv) != 3:
     print("Usage: python run.py model_path data_dir")
 
+model_paths = []
 model_path = Path(sys.argv[1])
+if model_path.is_dir():
+    model_paths = list(model_path.rglob("*.tflite"))
+elif model_path.is_file():
+    if model_path.suffix != ".tflite":
+        err = (
+            f"Suffix of provided model file is {model_path.suffix} instead of .tflite."
+        )
+        raise ValueError(err)
+    model_paths = [model_path]
+
 
 data_dir = Path(sys.argv[2])
 assert data_dir.is_dir()
@@ -65,5 +79,23 @@ model_input, model_desired_output = get_input_and_output_from_data_files(
     normalization,
     ma,
 )
-model = TFLiteModel(tf.lite.Interpreter, model_path)
-run_metrics_on_tflite_model(model, model_input, model_desired_output)
+
+confusion_matrices = []
+for model_path in model_paths:
+    model = TFLiteModel(tf.lite.Interpreter, model_path)
+    cm: npt.NDArray = run_metrics_on_tflite_model(
+        model,
+        model_input,
+        model_desired_output,
+    )
+    confusion_matrices.append(cm)
+
+
+disp = ConfusionMatrixDisplay(
+    confusion_matrix=confusion_matrices[0],
+    display_labels=["rest", "grip", "hold", "release"],
+)
+
+disp.plot()
+plt.title("Confusion matrix")
+plt.show()

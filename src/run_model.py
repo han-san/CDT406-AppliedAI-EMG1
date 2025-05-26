@@ -1,8 +1,8 @@
 import time
 
-import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
+import numpy.typing as npt
+from sklearn.metrics import confusion_matrix  # type: ignore[import-untyped]
 
 from data import Input, Output
 from tflite_model import TFLiteModel
@@ -12,7 +12,7 @@ def run_metrics_on_tflite_model(
     model: TFLiteModel,
     model_input: list[Input],
     expected_output: list[Output],
-) -> None:
+) -> npt.NDArray:
     """Test the accuracy of the model."""
     correct_classifications = [0, 0, 0, 0]
     incorrect_classifications = [0, 0, 0, 0]
@@ -67,11 +67,4 @@ def run_metrics_on_tflite_model(
     a = [np.argmax(v.output) for v in expected_output]
     b = [np.argmax(v) for v in predictions]
 
-    cm = confusion_matrix(a, b)
-    disp = ConfusionMatrixDisplay(
-        confusion_matrix=cm,
-        display_labels=["rest", "grip", "hold", "release"],
-    )
-    disp.plot()
-    plt.title("Confusion matrix")
-    plt.show()
+    return confusion_matrix(a, b)
