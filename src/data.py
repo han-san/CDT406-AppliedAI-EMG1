@@ -79,6 +79,9 @@ class LabeledWindow:
 
     def __init__(self, window: Window, labels: list[State]) -> None:
         """Construct a window containing labels for each measurement."""
+        if len(labels) != len(window):
+            err = f"LabeledWindow must have same length for window ({len(window)}) and labels ({len(labels)})."
+            raise ValueError(err)
         self.window = window
         self.labels = labels
 
