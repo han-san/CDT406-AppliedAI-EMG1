@@ -36,7 +36,11 @@ end
 
 ## Run
 ```bash
+$ cd src/script
 $ export PYTHONPATH=/path/to/src
-$ python -m src/script/measurements /path/to/script
+$ python -m measurements /path/to/script
 ```
 Collected readings are plotted and saved to `.csv` file.
+
+## Known bugs
+Command `led_off` turns off the current to all LEDs.
