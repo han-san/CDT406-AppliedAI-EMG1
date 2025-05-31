@@ -13,7 +13,7 @@ import tflite_runtime.interpreter as tflite
 
 from tflite_model import TFLiteModel
 
-v_ref = 1.8
+v_ref = 3.3
 power = (1 << 12) - 1
 
 def value_to_voltage(val):

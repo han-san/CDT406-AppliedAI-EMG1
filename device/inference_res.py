@@ -11,13 +11,19 @@ class State(Enum):
 	def __str__(self):
 		return self.name
 
+v_ref = 3.3
+power = (1 << 12) - 1
+
+def value_to_voltage(val):
+    return val * v_ref / power
+
 
 in_pipe = '/home/EMG1/setup/inference_pipe'
 
 number_of_states = 4
 buffer_size = 1500
 start = 0
-step = 1 / 15_000
+step = 1 / (15_000 / 2)
 
 struct_fmt = f'<{buffer_size * 2}B{number_of_states}f'
 
@@ -46,7 +52,7 @@ try:
 			ar = array.array('H')
 			ar.frombytes(samples)
 			for i in ar:
-				log.write(f'{start}, {i}, {res.value}\n')
+				log.write(f'{start}, {value_to_voltage(i)}, {res.value}\n')
 				start += step
 		else:
 			break
