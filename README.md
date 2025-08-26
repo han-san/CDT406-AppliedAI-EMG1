@@ -9,3 +9,9 @@ This repository is a part of 'Project in intelligent embedded systems' (DVA435) 
 
 ## Live-data
 https://drive.google.com/file/d/10xY-IjeQflOzlObk89YsHFR6gbYo9vAq/view?usp=sharing
+
+## Results
+### Report
+https://drive.google.com/file/d/1CxI6QKUE1PbAd2w3GW4jHPBgeQNPzVCN/view?usp=sharing
+### Presentation
+https://drive.google.com/file/d/1saGHsV8mERCIkM_BZYEYxCuf_shbq86O/view?usp=sharing
